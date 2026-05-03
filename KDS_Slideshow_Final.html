@@ -2145,9 +2145,9 @@ async function loadSlides() {
 // Duration constants
 
 // ── SLIDE ENGINE ──────────────────────────────────────────────
-const SLIDE_MS  = 8000;
+const SLIDE_MS  = 9000;
 const IFRAME_MS = 16000;
-const VIDEO_MS  = 240000;
+const VIDEO_MS  = 150000;
 let currentSlide = 0;
 let _advanceTimer = null;
 let _countdownRAF = null;
@@ -2211,13 +2211,16 @@ function goToSlide(idx) {
   const s = slides[idx];
   if (!s) { hideYouTube(); _startTimer(_durationFor(idx)); return; }
 
-  // ── Decode content ONCE at function scope (not inside any if block) ──
-  const rawContent = (s.content || '')
+  // Decode content once at function scope
+  const rawContent = (s.content||'')
     .replace(/&amp;/g,'&').replace(/&lt;/g,'<')
     .replace(/&gt;/g,'>').replace(/&quot;/g,'"');
   const rawLower = rawContent.toLowerCase();
 
-  // ── YouTube: bare URL or iframe ──────────────────────────────
+  // Capture nextIdx NOW so callbacks are never stale
+  const nextIdx = (idx + 1) % slides.length;
+
+  // ── YouTube ──────────────────────────────────────────────────
   if (isYouTube(rawLower) || /youtu\.be/.test(rawLower)) {
     const mYT = rawContent.match(/src=["']?([^"'\s>]+youtube[^"'\s>]*)["']?/i);
     const bareYT = rawContent.match(
@@ -2225,22 +2228,24 @@ function goToSlide(idx) {
     );
     const ytSrc = mYT ? mYT[1] : (bareYT ? bareYT[1] : null);
     if (ytSrc) {
-      _startTimer(VIDEO_MS);
-      showYouTube(ytSrc, () => goToSlide((currentSlide+1)%slides.length));
+      // UI only — no _advanceTimer (showYouTube owns the advance via _ytTimer)
+      _setProgressBar(VIDEO_MS);
+      _startCountdown(VIDEO_MS);
+      showYouTube(ytSrc, () => goToSlide(nextIdx));
       return;
     }
   }
 
-  // ── Google Slides: bare URL or iframe ────────────────────────
+  // ── Google Slides ─────────────────────────────────────────────
   if (isGoogleSlidesURL(rawLower)) {
-    // Try to extract src= attribute first (iframe case)
     const gsM = rawContent.match(/src=["']?([^"'\s>]+(?:presentation|slides\.google)[^"'\s>]*)["']?/i);
-    // Fallback: bare URL directly in content
     const bGS = rawContent.match(/https?:\/\/[^\s<>"]+(?:presentation|slides\.google)[^\s<>"]*/i);
     const gsSrc = gsM ? gsM[1] : (bGS ? bGS[0] : '');
     if (gsSrc) {
-      _startTimer(SLIDES_MS);
-      showGoogleSlides(gsSrc, () => goToSlide((currentSlide+1)%slides.length));
+      // UI only — no _advanceTimer (showGoogleSlides owns the advance via _ytTimer)
+      _setProgressBar(SLIDES_MS);
+      _startCountdown(SLIDES_MS);
+      showGoogleSlides(gsSrc, () => goToSlide(nextIdx));
       return;
     }
   }
@@ -2339,54 +2344,44 @@ function getOrCreateYTBox() {
 function showYouTube(rawSrc, onDone) {
   _ytDoneCallback = onDone;
 
-  // Full entity decode
   let src = rawSrc
     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
     .replace(/&quot;/g,'"');
 
-  // Extract src from full iframe tag (handles both quoted and unquoted src attributes)
-  const srcMatch = src.match(/src=["']?([^"'\s>]+)["']?/i);
+  const srcMatch = src.match(/src=["']?([^"'\s>]+youtube[^"'\s>]*)["']?/i);
   if (srcMatch) src = srcMatch[1].replace(/&amp;/g,'&');
 
-  // Capture timestamp before normalizing
   const tsMatch = src.match(/[?&]t=(\d+)/);
   const startSec = tsMatch ? tsMatch[1] : null;
-  src = src.replace(/[?&]t=\d+/g, '');
+  src = src.replace(/[?&]t=\d+/g,'');
 
-  // Normalize all YouTube URL formats → embed URL using youtube-nocookie.com
   src = src
-    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/watch\?v=/, 'www.youtube-nocookie.com/embed/')
-    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/live\//, 'www.youtube-nocookie.com/embed/')
-    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/shorts\//, 'www.youtube-nocookie.com/embed/')
-    .replace(/(?:www\.)?youtu\.be\//, 'www.youtube-nocookie.com/embed/');
+    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/watch\?v=/,'www.youtube-nocookie.com/embed/')
+    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/live\//,'www.youtube-nocookie.com/embed/')
+    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/shorts\//,'www.youtube-nocookie.com/embed/')
+    .replace(/(?:www\.)?youtu\.be\//,'www.youtube-nocookie.com/embed/');
 
-  // Ensure it's in /embed/ format
   if (!src.includes('/embed/')) {
     src = 'https://www.youtube-nocookie.com/embed/' + src.split('/').pop();
   }
 
-  // Strip extra query params that conflict with embed; start with a clean set
   const vidMatch = src.match(/\/embed\/([\w-]+)/);
   const videoId = vidMatch ? vidMatch[1] : '';
   src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1`;
   if (startSec) src += `&start=${startSec}`;
 
   const box = getOrCreateYTBox();
-  box.innerHTML = `<iframe
-    src="${src}"
-    style="width:100%;height:100%;border:none;"
-    allowfullscreen
-    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-    referrerpolicy="strict-origin-when-cross-origin">
-  </iframe>`;
+  box.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;border:none;"
+    allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+    referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   box.classList.add('active');
-  _startCountdown(240000);
-  _setProgressBar(240000);
+
+  // Own the advance — _ytTimer is the ONLY thing that advances after video
   if (_ytTimer) clearTimeout(_ytTimer);
   _ytTimer = setTimeout(() => {
     hideYouTube();
     if (_ytDoneCallback) { _ytDoneCallback(); _ytDoneCallback = null; }
-  }, 240000);
+  }, VIDEO_MS);
 }
 function hideYouTube() {
   if (_ytTimer) { clearTimeout(_ytTimer); _ytTimer = null; }
@@ -2496,7 +2491,7 @@ function maybeBurstTitle(slideIdx) {
 // ══ GOOGLE SLIDES FULLSCREEN ENGINE ═══════════════════════
 // Detects bare presentation URLs or iframe embeds,
 // converts to autoplay embed, shows fullscreen for 4 minutes
-const SLIDES_MS = 4 * 60 * 1000;  // 4 minutes
+const SLIDES_MS = 150000;  // 4 minutes
 
 function isGoogleSlidesURL(str) {
   return /docs\.google\.com\/presentation|slides\.google\.com/.test(str);
@@ -2509,38 +2504,25 @@ function showGoogleSlides(rawSrc, onDone) {
     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
     .replace(/&quot;/g,'"');
 
-  // Extract src= from iframe tag if full iframe code was passed
   const srcM = src.match(/src=["']?([^"'\s>]+(?:presentation|slides\.google)[^"'\s>]*)["']?/i);
   if (srcM) src = srcM[1].replace(/&amp;/g,'&');
 
-  // Normalise all Google Slides URL path variants → clean /embed URL
-  // Handles: /pub, /pubembed, /embed, /present, and any combination
-  // Extract base: everything up to and including the presentation ID path
-  const baseMAtch = src.match(/(https?:\/\/[^/]+\/.*?\/d\/e\/[^/]+)/);
-  if (baseMAtch) {
-    const base = baseMAtch[1];
-    src = `${base}/embed?start=true&loop=true&delayms=5000&rm=minimal`;
+  const baseMatch = src.match(/(https?:\/\/[^/]+\/.*?\/d\/e\/[^/]+)/);
+  if (baseMatch) {
+    src = `${baseMatch[1]}/embed?start=true&loop=true&delayms=5000&rm=minimal`;
   } else {
-    // Fallback: strip existing path suffix and add /embed
-    src = src
-      .replace(/\/pubembed(\?.*)?$/, '/embed')
-      .replace(/\/pub(\?.*)?$/, '/embed')
-      .replace(/\/present(\?.*)?$/, '/embed');
-    // Strip old params and add fresh ones
-    src = src.split('?')[0] + '?start=true&loop=true&delayms=5000&rm=minimal';
+    src = src.split('?')[0]
+      .replace(/\/(pub|pubembed|present|embed)\/?$/, '')
+      + '/embed?start=true&loop=true&delayms=5000&rm=minimal';
   }
 
   const box = getOrCreateYTBox();
-  box.innerHTML = `<iframe
-    src="${src}"
-    style="width:100%;height:100%;border:none;"
-    allowfullscreen
-    allow="autoplay; fullscreen"
-    referrerpolicy="strict-origin-when-cross-origin">
-  </iframe>`;
+  box.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;border:none;"
+    allowfullscreen allow="autoplay; fullscreen"
+    referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   box.classList.add('active');
-  _startCountdown(SLIDES_MS);
-  _setProgressBar(SLIDES_MS);
+
+  // Own the advance — _ytTimer is the ONLY thing that advances after slides
   if (_ytTimer) clearTimeout(_ytTimer);
   _ytTimer = setTimeout(() => {
     hideYouTube();
