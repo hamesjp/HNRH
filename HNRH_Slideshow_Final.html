@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hants North Rural High – Announcements</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Montserrat:wght@700;900&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --bg:       #0e1e14;
+    --hdr-bg:   rgba(12,30,20,0.94);
+    --hdr-bdr:  rgba(180,220,160,0.35);
+    --accent:   #c8e8a0;
+    --accent2:  #f0d890;
+    --card-bg:  rgba(10,28,18,0.80);
+    --card-bdr: rgba(180,220,160,0.18);
+    --text:     #e4f0e0;
+    --muted:    rgba(200,230,190,0.65);
+  }
+
+  body { width:100vw; height:100vh; overflow:hidden; font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); }
+  #oceanCanvas { position:fixed; inset:0; width:100%; height:100%; z-index:0; }
+
+  /* ── HEADER ── */
+  #header {
+    position:fixed; top:0; left:0; right:0; height:80px;
+    background:var(--hdr-bg); backdrop-filter:blur(14px);
+    border-bottom:1.5px solid var(--hdr-bdr);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 32px; z-index:100; box-shadow:0 2px 18px rgba(0,0,0,0.35);
+  }
+  #header-left { display:flex; align-items:center; gap:16px; }
+  #school-logo { width:52px; height:52px; background:var(--accent2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Montserrat',sans-serif; font-weight:900; font-size:13px; color:#2a1e04; flex-shrink:0; text-align:center; line-height:1.15; }
+  #school-name { font-family:'Montserrat',sans-serif; font-weight:700; font-size:18px; color:var(--text); line-height:1.2; }
+  #school-name span { display:block; font-family:'Nunito',sans-serif; font-size:11px; font-weight:400; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  #header-center { display:flex; flex-direction:column; align-items:center; }
+  #clock { font-family:'Montserrat',sans-serif; font-weight:900; font-size:36px; color:var(--accent2); letter-spacing:2px; line-height:1; }
+  #date-display { font-size:13px; color:var(--muted); margin-top:2px; }
+  #weather-widget { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(180,220,160,0.16); border-radius:14px; padding:8px 16px; min-width:200px; }
+  #weather-icon { font-size:30px; }
+  #weather-temp { font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; color:var(--text); line-height:1; }
+  #weather-desc { font-size:12px; color:var(--muted); margin-top:2px; }
+  #weather-location { font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px; }
+
+  /* ── SLIDES ── */
+  #slide-container { position:fixed; top:80px; left:0; right:0; bottom:60px; z-index:10; display:flex; align-items:center; justify-content:center; padding:28px 44px; }
+  .slide { position:absolute; inset:28px 44px; display:flex; align-items:center; justify-content:center; opacity:0; transform:translateY(14px) scale(0.97); transition:opacity 0.7s ease,transform 0.7s ease; pointer-events:none; }
+  .slide.active { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+  .slide.exit   { opacity:0; transform:translateY(-14px) scale(0.97); }
+  .announce-card { background:var(--card-bg); backdrop-filter:blur(22px); border:1px solid var(--card-bdr); border-radius:24px; padding:44px 60px; max-width:880px; width:100%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05); position:relative; overflow:hidden; }
+  .announce-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),var(--accent),transparent); opacity:0.75; }
+  .slide-category { display:inline-block; background:rgba(180,220,160,0.12); border:1px solid rgba(180,220,160,0.28); color:var(--accent); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:5px 16px; border-radius:100px; margin-bottom:18px; }
+  .slide-emoji { font-size:72px; display:block; margin-bottom:14px; animation:float 3.5s ease-in-out infinite; }
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .slide-image { width:100%; max-height:340px; border-radius:14px; margin:0 auto 10px; object-fit:cover; display:block; box-shadow:0 6px 24px rgba(0,0,0,0.3); }
+  .announce-card.has-image .slide-title { font-size:26px !important; margin-bottom:6px; }
+  .slide-title { font-family:'Montserrat',sans-serif; font-weight:900; font-size:40px; color:var(--text); line-height:1.15; margin-bottom:12px; text-shadow:0 2px 10px rgba(0,0,0,0.3); word-break:break-word; }
+  .slide-body { font-size:21px; color:var(--muted); line-height:1.6; font-weight:300; max-width:700px; margin:0 auto; word-break:break-word; }
+  .announce-card.has-embed { background:rgba(248,248,248,0.97) !important; border-color:rgba(200,200,200,0.35) !important; padding:22px 30px !important; }
+  .announce-card.has-embed .slide-title { color:#1a1a2a !important; text-shadow:none; }
+  .announce-card.has-embed .slide-category { background:rgba(0,100,200,0.10); border-color:rgba(0,100,200,0.25); color:#1a4a80; }
+
+  /* ── FOOTER ── */
+  #footer { position:fixed; bottom:0; left:0; right:0; height:60px; background:rgba(10,28,18,0.9); backdrop-filter:blur(8px); border-top:1px solid rgba(180,220,160,0.1); display:flex; align-items:center; justify-content:center; gap:10px; z-index:100; }
+  .dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.2); transition:all 0.4s ease; cursor:pointer; }
+  .dot.active { width:26px; border-radius:4px; background:var(--accent); }
+  #progress-bar { position:fixed; bottom:60px; left:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); z-index:101; transition:width linear; box-shadow:0 0 6px rgba(180,220,160,0.4); }
+
+  #loading-overlay { position:fixed; inset:0; background:rgba(10,20,14,0.97); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:200; transition:opacity 0.8s ease; }
+  #loading-overlay.hidden { opacity:0; pointer-events:none; }
+  .spinner { width:44px; height:44px; border:3px solid rgba(180,220,160,0.2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:14px; }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading-overlay p { color:var(--muted); font-size:14px; letter-spacing:1px; }
+
+  /* ── QR PANEL ── */
+  #qr-panel {
+    position: fixed;
+    right: 18px;
+    top: 96px;
+    bottom: 72px;
+    width: 148px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 14px;
+    z-index: 50;
+    overflow: hidden;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+  }
+  .qr-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    animation: qrSlideIn 0.4s ease both;
+    pointer-events: auto;
+  }
+  @keyframes qrSlideIn {
+    from { opacity:0; transform:translateX(24px) scale(0.92); }
+    to   { opacity:1; transform:translateX(0)    scale(1); }
+  }
+  .qr-box {
+    width: 112px; height: 112px;
+    background: white;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 1.5px rgba(180,220,160,0.25);
+    overflow: hidden;
+  }
+  .qr-box img, .qr-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 4px;
+  }
+  .qr-label {
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    color: rgba(200,230,190,0.70);
+    text-align: center;
+    max-width: 130px;
+    line-height: 1.3;
+    word-break: break-all;
+    background: rgba(10,28,18,0.65);
+    border-radius: 5px;
+    padding: 2px 6px;
+  }
+
+  /* ── EMBED BODY (Facebook / iframe) ── */
+  .slide-embed {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    max-height: 440px;
+    overflow: hidden;
+  }
+  .slide-embed iframe {
+    border: none;
+    border-radius: 12px;
+    max-width: 100%;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .slide-embed .fb-post,
+  .slide-embed .fb-video {
+    max-width: 500px !important;
+  }
+  .announce-card.has-embed {
+    padding: 24px 32px;
+  }
+
+  /* ── Animated slide icons ── */
+  .slide-icon-wrap {
+    display: flex; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .slide-anim-icon {
+    width: 58px; height: 58px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+  }
+  /* Image-first caption */
+  .slide-body.image-caption {
+    font-size: 15px !important;
+    opacity: 0.80;
+    margin-top: 8px;
+    max-height: 3em;
+    overflow: hidden;
+  }
+  /* Text-only slides — slightly larger body */
+  .announce-card.has-text .slide-body {
+    font-size: 22px;
+    line-height: 1.65;
+  }
+
+  /* ── SCHEDULE PANEL ── */
+  .schedule-panel {
+    position: fixed;
+    left: 12px;
+    top: 88px;
+    bottom: 68px;
+    width: 176px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: rgba(10,28,42,0.72);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(160,210,200,0.18);
+    border-radius: 14px;
+    padding: 10px 8px;
+    overflow: hidden;
+    animation: schDrift 18s ease-in-out infinite;
+  }
+  @keyframes schDrift {
+    0%,100% { transform: translateY(0px); opacity:0.92; }
+    33%      { transform: translateY(-3px); opacity:0.96; }
+    66%      { transform: translateY(2px); opacity:0.90; }
+  }
+  .sch-title {
+    font-family: 'Fredoka One', 'Montserrat', cursive;
+    font-size: 13px; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--accent2, #f0d890); text-align: center;
+    padding: 4px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.10);
+    margin-bottom: 6px;
+  }
+  .sch-list { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+  .sch-item {
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 5px 7px; border-radius: 8px;
+    border-left: 3px solid rgba(160,210,200,0.25);
+    transition: background 0.5s ease, border-color 0.5s ease;
+  }
+  .sch-item.active {
+    background: rgba(160,210,200,0.15);
+    border-left-color: var(--accent, #c8e8a0);
+    animation: schPulse 3s ease-in-out infinite;
+  }
+  .sch-item.past { opacity: 0.38; }
+  @keyframes schPulse {
+    0%,100% { background: rgba(160,210,200,0.12); }
+    50%      { background: rgba(160,210,200,0.22); }
+  }
+  .sch-time  { font-size: 10px; color: rgba(200,230,225,0.55); font-weight:600; letter-spacing:0.3px; }
+  .sch-label { font-size: 12px; color: rgba(220,240,235,0.90); font-weight:700; }
+  .sch-sub   { font-size: 9.5px; color: rgba(200,220,218,0.55); line-height: 1.3; }
+
+  /* ── HEADER ANTI-BURN: slow colour shift on border ── */
+  @keyframes hdrBorderShift {
+    0%,100% { border-bottom-color: rgba(160,210,200,0.35); }
+    33%      { border-bottom-color: rgba(180,200,230,0.30); }
+    66%      { border-bottom-color: rgba(200,190,210,0.28); }
+  }
+  #header { animation: hdrBorderShift 22s ease-in-out infinite; }
+
+  /* Subtle clock colour breathe */
+  @keyframes clockBreathe {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.82; }
+  }
+  #clock { animation: clockBreathe 8s ease-in-out infinite; }
+
+  /* Logo slow pulse */
+  @keyframes logoPulse {
+    0%,100% { transform:scale(1); }
+    50%      { transform:scale(1.04); }
+  }
+  #school-logo { animation: logoPulse 12s ease-in-out infinite; }
+
+  /* ── SLIDE CONTAINER: shift right to clear schedule panel ── */
+  #slide-container { left: 196px !important; }
+  #progress-bar    { left: 196px !important; }
+
+  
+
+
+  /* ── CLOCK: 12-hour with AM/PM ── */
+  #header-center { display:flex; flex-direction:column; align-items:center; }
+  #clock-row     { display:flex; align-items:baseline; gap:6px; }
+  #clock         { font-family:'Montserrat',sans-serif; font-weight:900; font-size:40px; color:var(--accent2); letter-spacing:1px; line-height:1; }
+  #clock-ampm    { font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px; color:var(--accent2); opacity:0.80; letter-spacing:1px; }
+  #date-display  { font-size:12px; color:var(--muted); margin-top:1px; text-align:center; }
+
+  /* ── HEADER: font scaling ── */
+  #school-name   { font-family:'Montserrat',sans-serif; font-weight:700; font-size:17px; color:var(--text); line-height:1.2; }
+  #school-name span { font-size:10px; }
+  #school-logo   { width:48px; height:48px; font-size:12px; }
+  #weather-temp  { font-size:20px; }
+  #weather-desc  { font-size:11px; }
+  #weather-location { font-size:9.5px; }
+
+  /* ── SCHEDULE: readable at TV distance ── */
+  .schedule-panel { width:168px; }
+  .sch-title { font-size:11px; }
+  .sch-time  { font-size:9.5px; }
+  .sch-label { font-size:11px; }
+  .sch-sub   { font-size:8.5px; }
+
+  /* ── SLIDES: high readability, room for content ── */
+  .announce-card  { padding:36px 48px; }
+  .slide-title    { font-size:36px; }
+  .slide-body     { font-size:20px; line-height:1.58; }
+  .slide-category { font-size:10px; padding:4px 14px; margin-bottom:14px; }
+
+  /* ── SLIDE CONTAINER: account for 168px schedule panel ── */
+  #slide-container { left:188px !important; }
+  #progress-bar    { left:188px !important; }
+
+
+  
+
+
+  /* ══════════════════════════════════════════════════════
+     LAYOUT GUARANTEES
+     - Header always on top (z-index:100)
+     - Footer always on top (z-index:100)  
+     - NOTHING covers header or footer
+     - Skip button lives in footer permanently
+     - YouTube expands slide-container only (between header & footer)
+  ══════════════════════════════════════════════════════ */
+
+  /* Header and footer are sacred – always topmost visible layers */
+  #header  { z-index: 200 !important; }
+  #footer  { z-index: 200 !important; position: fixed !important; }
+  #progress-bar { z-index: 199 !important; }
+
+  /* Video container – expands between header and footer ONLY */
+  #yt-expand {
+    display: none;
+    position: fixed;
+    top: 82px;          /* just below header */
+    left: 0; right: 0;
+    bottom: 62px;       /* just above footer */
+    z-index: 150;       /* above slides, BELOW header and footer */
+    background: #000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #yt-expand.active { display: flex; }
+  #yt-expand iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* Remove old video-overlay entirely */
+  #video-overlay { display: none !important; }
+
+  /* Facebook embed – render fully inside slide card */
+  .slide-embed {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 120px;
+    overflow: visible;        /* don't clip fb widget */
+  }
+  .slide-embed iframe {
+    border: none;
+    border-radius: 10px;
+    max-width: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .slide-embed .fb-post,
+  .slide-embed .fb-video {
+    max-width: 500px !important;
+  }
+  /* FB embed card: white bg so widget text is always readable */
+  .announce-card.has-embed {
+    background: rgba(250,250,250,0.98) !important;
+    border-color: rgba(0,0,0,0.10) !important;
+    padding: 24px 28px !important;
+  }
+  .announce-card.has-embed .slide-title  { color: #111 !important; text-shadow: none; }
+
+  /* Skip button always in footer – never covered */
+  #skip-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.10);
+    border: 1.5px solid rgba(255,255,255,0.22);
+    border-radius: 8px;
+    padding: 5px 13px 5px 10px;
+    color: rgba(255,255,255,0.82);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    z-index: 201;           /* above everything including header */
+    transition: background 0.2s, border-color 0.2s;
+    pointer-events: auto;
+  }
+  #skip-btn:hover { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.50); color: #fff; }
+  #skip-btn:active { transform: translateY(-50%) scale(0.95); }
+  #skip-countdown {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.35);
+    font-size: 11px; font-weight: 800;
+    color: rgba(255,255,255,0.92);
+    font-variant-numeric: tabular-nums;
+    background: conic-gradient(rgba(255,255,255,0.50) 0%, rgba(255,255,255,0.08) 0%);
+    flex-shrink: 0;
+  }
+
+
+  /* ── RICH TEXT BODY STYLES ── */
+  /* Cards can expand vertically for long text; slide centres them */
+  .announce-card.has-text {
+    padding: 28px 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Long text left-aligns naturally; short text stays centred */
+  .slide-body {
+    text-align: left;
+    width: 100%;
+    max-width: 820px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  /* Very short body (≥36px) — centre it, it looks better */
+  .slide-body.short-text {
+    text-align: center;
+  }
+  /* Links inside body */
+  .slide-body a {
+    color: var(--accent);
+    text-decoration: underline;
+    word-break: break-all;
+  }
+  /* Line-height breathing for multi-line posts */
+  .slide-body br + br { display: block; margin: 0.4em 0; content: ""; }
+
+
+  /* ── TRANSPARENCY: 88% solid ── */
+  .announce-card          { background: rgba(18,40,58,0.88) !important; }
+  .announce-card.has-embed{ background: rgba(248,248,248,0.88) !important; }
+
+  /* ── POST TITLE ROW ── */
+  .post-title-row {
+    display:flex; align-items:center; justify-content:center;
+    gap:12px; margin-bottom:14px; width:100%;
+    flex-wrap: nowrap;
+  }
+  .post-title {
+    font-size:38px; font-weight:900; line-height:1.1;
+    margin:0; text-align:center; flex:1; max-width:680px;
+  }
+  .title-icon { flex-shrink:0; display:flex; align-items:center; }
+  .title-icon .slide-anim-icon { width:42px; height:42px; }
+
+  /* Content with flanking icons (no title) */
+  .content-with-icons { display:flex; align-items:center; gap:10px; width:100%; }
+  .side-icon { flex-shrink:0; display:flex; align-items:center; opacity:0.65; }
+  .side-icon .slide-anim-icon { width:34px; height:34px; }
+  .content-center { flex:1; min-width:0; }
+
+  /* Slide container leaves room for QR on right */
+  #slide-container { right: 175px !important; }
+  #progress-bar    { right: 175px !important; }
+
+  /* ── QR PANEL ── */
+  #qr-panel {
+    position:fixed; right:8px; top:90px; bottom:70px; width:158px;
+    display:flex; flex-direction:column; justify-content:space-around;
+    align-items:center; gap:8px; z-index:50;
+    pointer-events:none; transition:opacity 0.4s ease;
+  }
+  .qr-item { display:flex; flex-direction:column; align-items:center; gap:4px;
+              animation:qrIn 0.4s ease; }
+  @keyframes qrIn { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:none} }
+  .qr-box { width:108px; height:108px; background:#fff; border-radius:10px; padding:5px;
+             box-shadow:0 4px 14px rgba(0,0,0,0.35); overflow:hidden; }
+  .qr-box img,.qr-box canvas { width:100%!important; height:100%!important; border-radius:3px; }
+  .qr-label { font-size:9.5px; color:rgba(200,228,218,0.70); text-align:center;
+               max-width:140px; word-break:break-all; background:rgba(10,28,40,0.65);
+               border-radius:4px; padding:2px 5px; }
+  .qr-flame .qr-box {
+    animation:flameBorder 2s ease-in-out infinite;
+  }
+  @keyframes flameBorder {
+    0%,100%{ box-shadow:0 0 0 2px #f5a623,0 0 12px #e84a10,0 4px 14px rgba(0,0,0,0.3); }
+    50%    { box-shadow:0 0 0 3px #ffcc00,0 0 20px #ff6600,0 4px 14px rgba(0,0,0,0.3); }
+  }
+
+  /* ── PAUSE BUTTON ── */
+  #pause-btn {
+    position:absolute; right:80px; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; background:rgba(255,255,255,0.10);
+    border:1.5px solid rgba(255,255,255,0.22); border-radius:8px;
+    color:rgba(255,255,255,0.82); font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; z-index:201;
+    transition:background 0.2s,border-color 0.2s;
+  }
+  #pause-btn:hover { background:rgba(255,255,255,0.20); color:#fff; }
+  #pause-btn.paused { background:rgba(255,80,80,0.20); border-color:rgba(255,80,80,0.50); color:#ffaaaa; }
+
+  /* ── CLOCK DIGIT PARTICLES ── */
+  .clock-particle { position:fixed; pointer-events:none; z-index:300; }
+
+  /* ── SLIDE BODY: rich text ── */
+  .slide-body { text-align:left; width:100%; max-width:820px;
+                overflow-wrap:break-word; word-break:break-word; }
+  .slide-body.short-text { text-align:center; }
+  .slide-body a { color:var(--accent); text-decoration:underline; word-break:break-all; }
+  .announce-card.has-embed .slide-title { color:#111 !important; text-shadow:none; }
+
+  /* HNRH: flame title shimmer */
+  .themed-title {
+    background:linear-gradient(90deg, var(--text) 0%, #ffcc00 20%, #ff8800 40%, var(--text) 60%, #ffcc00 80%, var(--text) 100%);
+    background-size:200% auto;
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    animation:flameTitle 2.8s linear infinite; text-shadow:none;
+  }
+  @keyframes flameTitle { 0%{background-position:0% center} 100%{background-position:200% center} }
+  @keyframes clockParticle {
+    0%  { opacity:1; transform:scaleX(0.8) translateY(0); }
+    60% { opacity:0.8; transform:scaleX(1) translateY(-20px); }
+    100%{ opacity:0; transform:scaleX(0.5) translateY(-44px); }
+  }
+  .flame-effect #clock { text-shadow:0 0 10px #ff6600, 0 0 20px #ff3300; }
+  .sch-item.also-active { border-left-color:#f5c842 !important; background:rgba(245,200,66,0.12) !important; }
+  .sch-item[data-jr="true"], .sch-item[data-sr="true"] { padding-left:18px; }
+
+</style>
+</head>
+<body>
+
+<canvas id="oceanCanvas"></canvas>
+<div id="loading-overlay"><div class="spinner"></div><p>Loading announcements…</p></div>
+
+<header id="header">
+  <div id="header-left">
+    <div id="school-logo">HNRH</div>
+    <div id="school-name">Hants North Rural High<span>CCRCE · Kennetcook, NS</span></div>
+  </div>
+  <div id="header-center">
+    <div id="clock-row">
+      <div id="clock">--:--</div>
+      <div id="clock-ampm">AM</div>
+    </div>
+    <div id="date-display">Loading date…</div>
+  </div>
+  <div id="header-right">
+    <div id="weather-widget">
+      <div id="weather-icon">🌤️</div>
+      <div>
+        <div id="weather-temp">--°C</div>
+        <div id="weather-desc">Kennetcook, NS</div>
+        <div id="weather-location">Loading weather…</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="qr-panel"></div>
+<div id="schedule-panel" class="schedule-panel">
+  <div class="sch-title">Daily Schedule</div>
+  <div class="sch-list">
+    <div class="sch-item" data-start="8:45"  data-end="9:45"><span class="sch-time">8:45–9:45</span><span class="sch-label">Period 1</span></div>
+    <div class="sch-item" data-start="9:45"  data-end="10:45"><span class="sch-time">9:45–10:45</span><span class="sch-label">Period 2</span></div>
+    <div class="sch-item" data-start="10:55" data-end="12:35" data-p3="true"><span class="sch-time">10:55–12:35</span><span class="sch-label">Period 3</span></div>
+    <div class="sch-item" data-start="11:15" data-end="11:55" data-jr="true"><span class="sch-time"> ↳ 11:15–11:55</span><span class="sch-label">Jr Lunch 7–9</span></div>
+    <div class="sch-item" data-start="11:55" data-end="12:35" data-sr="true"><span class="sch-time"> ↳ 11:55–12:35</span><span class="sch-label">Sr Lunch 10–12</span></div>
+    <div class="sch-item" data-start="12:35" data-end="13:35"><span class="sch-time">12:35–1:35</span><span class="sch-label">Period 4</span></div>
+    <div class="sch-item" data-start="13:40" data-end="14:40"><span class="sch-time">1:40–2:40</span><span class="sch-label">Period 5</span></div>
+    <div class="sch-item" data-start="14:40" data-end="15:15"><span class="sch-time">2:40–3:15</span><span class="sch-label">Bussing</span><span class="sch-sub">115·116·18·3·96·89</span></div>
+  </div>
+</div>
+<div id="slide-container"></div>
+<div id="progress-bar"></div>
+<footer id="footer"><button id="skip-btn" onclick="window._skipSlide&&window._skipSlide()" title="Next"><span id="skip-countdown">8</span><span>›</span></button><button id="pause-btn" onclick="window._togglePause&&window._togglePause()" title="Pause">⏸</button></footer>
+
+<script>
+const CONFIG = {
+  sheetsURL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLqtMqozOMVOltrCE_oOyqkrr43XByw5v-rvYj0ni6LYEDpkA5iA0PdO7m9OO4SlzY4cFW_jhQqFBz/pub?gid=0&single=true&output=csv',
+  slideDuration: 8000,
+  refreshInterval: 60000,
+  lat: 45.0667, lon: -63.7333,
+};
+
+// ══════════════════════════════════════════════════════════
+//  OCEAN SCENE — ultra-calm, slow, meditative
+//  Slow rolling waves, drifting clouds, gentle sun,
+//  weather-reactive precipitation (rain/snow from API)
+// ══════════════════════════════════════════════════════════
+(function ocean() {
+  const canvas = document.getElementById('oceanCanvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, t = 0;
+
+  // ── Weather state (set by fetchWeather) ─────────────────
+  // 0=clear 1=clouds 2=rain 3=heavy-rain 4=snow 5=storm 6=fog
+  window._weatherState = 0;
+
+  // ── Wave layers — very slow, gentle ─────────────────────
+  // speed is tiny: full wave cycle takes ~3-4 minutes
+  const WAVES = [
+    { amp:14, freq:0.0050, spd:0.000045, y:0.44, col:'rgba(28, 88,118,0.50)' },
+    { amp:12, freq:0.0065, spd:0.000060, y:0.50, col:'rgba(38,108,140,0.56)' },
+    { amp:13, freq:0.0058, spd:0.000052, y:0.56, col:'rgba(48,125,158,0.62)' },
+    { amp:11, freq:0.0075, spd:0.000068, y:0.62, col:'rgba(60,140,172,0.68)' },
+    { amp:10, freq:0.0082, spd:0.000074, y:0.68, col:'rgba(74,156,185,0.74)' },
+    { amp: 9, freq:0.0090, spd:0.000082, y:0.74, col:'rgba(90,170,198,0.80)' },
+    { amp: 8, freq:0.0100, spd:0.000090, y:0.80, col:'rgba(108,186,210,0.87)' },
+    { amp: 6, freq:0.0115, spd:0.000100, y:0.86, col:'rgba(128,202,222,0.94)' },
+  ];
+
+  // ── Clouds ───────────────────────────────────────────────
+  let clouds = [];
+  // ── Foam particles ───────────────────────────────────────
+  let foam = [];
+  // ── Gulls ────────────────────────────────────────────────
+  let gulls = [];
+  // ── Precipitation ────────────────────────────────────────
+  let drops = [];  // rain or snow
+
+  function waveY(w, x) {
+    const tSec = t * 0.016; // ~60fps so t increments each frame
+    return H * w.y
+      + Math.sin(x * w.freq + tSec * w.spd * 6000) * w.amp
+      + Math.cos(x * w.freq * 0.6 + tSec * w.spd * 4500 + 1.4) * w.amp * 0.35;
+  }
+
+  // Cloud builder — puffball composite ellipses
+  function makeCloud(x, y, scale, alpha) {
+    return { x, y, scale, alpha,
+      vx: 0.008 + Math.random() * 0.012,  // very slow drift
+      puffs: [
+        {rx:scale*52, ry:scale*26, ox:0,         oy:0},
+        {rx:scale*38, ry:scale*22, ox:-scale*36,  oy:scale*8},
+        {rx:scale*34, ry:scale*20, ox: scale*38,  oy:scale*10},
+        {rx:scale*28, ry:scale*18, ox:-scale*14,  oy:-scale*14},
+        {rx:scale*24, ry:scale*16, ox: scale*20,  oy:-scale*10},
+      ]
+    };
+  }
+
+  function spawnCloud(offScreen) {
+    const y     = H * (0.05 + Math.random() * 0.22);
+    const scale = 0.5 + Math.random() * 0.7;
+    const alpha = 0.25 + Math.random() * 0.35;
+    const x     = offScreen ? -scale * 150 : Math.random() * W;
+    clouds.push(makeCloud(x, y, scale, alpha));
+  }
+
+  function spawnFoam() {
+    const w = WAVES[Math.floor(Math.random() * WAVES.length)];
+    foam.push({
+      x: Math.random() * W,
+      y: H * w.y,
+      vx:(Math.random()-0.5)*0.25,
+      vy:-0.08 - Math.random()*0.18,
+      r:  1.2 + Math.random()*2.2,
+      life:1, decay:0.003+Math.random()*0.006
+    });
+  }
+
+  function spawnDrop(snow) {
+    drops.push(snow
+      ? { x:Math.random()*W, y:-5,
+          vx:(Math.random()-0.5)*0.4, vy:0.4+Math.random()*0.5,
+          r:2+Math.random()*2, life:1, snow:true,
+          wobble:Math.random()*Math.PI*2, ws:0.02+Math.random()*0.02 }
+      : { x:Math.random()*W, y:-8,
+          vx:-0.3-Math.random()*0.5, vy:3+Math.random()*3,
+          len:6+Math.random()*10, life:1, snow:false }
+    );
+  }
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    initScene();
+  }
+
+  function initScene() {
+    clouds=[]; foam=[]; gulls=[]; drops=[];
+    for (let i=0;i<6;i++)  spawnCloud(false);
+    for (let i=0;i<40;i++) spawnFoam();
+    for (let i=0;i<4;i++) {
+      gulls.push({ x:Math.random()*W, y:H*(0.08+Math.random()*0.16),
+        vx:0.18+Math.random()*0.28, wing:Math.random()*Math.PI*2 });
+    }
+  }
+
+  // ── Sky gradient — changes with weather ─────────────────
+
+function getSkyTheme(){
+  const h=new Date().getHours(),m=new Date().getMinutes(),mins=h*60+m;
+  if(mins<600) return 'sunrise'; if(mins>=870) return 'sunset'; return 'day';
+}
+function getSkyColors(ws){
+  const t=getSkyTheme();
+  if(ws>=5) return{top:'#0d1a2a',mid:'#1a2e3e',hor:'#2a4050'};
+  if(ws>=3) return{top:'#1a2a3c',mid:'#2a4558',hor:'#3a5870'};
+  if(ws===6) return{top:'#2a3038',mid:'#384048',hor:'#505860'};
+  if(t==='sunrise') return{top:'#1a1228',mid:'#7a3820',hor:'#e88040'};
+  if(t==='sunset')  return{top:'#1a0e22',mid:'#7a2c50',hor:'#e06030'};
+  return{top:'#1a3a5c',mid:'#2a5f8a',hor:'#6aaccc'};
+}
+  function drawSky() {
+    const ws = window._weatherState;
+    let topCol, midCol, horCol;
+    if (ws >= 5) {
+      topCol='#0d1a2a'; midCol='#1a2e3e'; horCol='#2a4050'; // storm: dark
+    } else if (ws >= 3) {
+      topCol='#1a2a3c'; midCol='#2a4558'; horCol='#3a5870'; // rain: grey-blue
+    } else if (ws === 6) {
+      topCol='#2a3038'; midCol='#384048'; horCol='#505860'; // fog: grey
+    } else {
+      topCol='#1a3a5c'; midCol='#2a5f8a'; horCol='#6aaccc'; // clear/cloudy
+    }
+    const sky = ctx.createLinearGradient(0,0,0,H*0.46);
+    sky.addColorStop(0, topCol);
+    sky.addColorStop(0.5, midCol);
+    sky.addColorStop(1, horCol);
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H*0.47);
+  }
+
+  // ── Sun — visible on clear/partly-cloudy ─────────────────
+  function drawSun() {
+    const ws = window._weatherState;
+    if (ws >= 2) return; // hidden when cloudy/rainy
+    const sunX = W*0.75, sunY = H*0.18;
+    // Rays — slow rotation
+    const tSec = t * 0.016;
+    ctx.save();
+    ctx.translate(sunX, sunY);
+    ctx.rotate(tSec * 0.003);
+    for (let i=0;i<12;i++) {
+      const a = (i/12)*Math.PI*2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*34, Math.sin(a)*34);
+      ctx.lineTo(Math.cos(a)*52, Math.sin(a)*52);
+      ctx.strokeStyle=`rgba(255,230,120,${0.10+Math.sin(tSec*0.5+i)*0.03})`;
+      ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.stroke();
+    }
+    ctx.restore();
+    // Glow
+    const sunG=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,W*0.22);
+    sunG.addColorStop(0,'rgba(255,235,140,0.18)');
+    sunG.addColorStop(1,'transparent');
+    ctx.fillStyle=sunG; ctx.fillRect(0,0,W,H*0.5);
+    // Disc
+    const disc=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,26);
+    disc.addColorStop(0,'rgba(255,245,170,0.88)');
+    disc.addColorStop(0.5,'rgba(255,220,100,0.55)');
+    disc.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(sunX,sunY,26,0,Math.PI*2);
+    ctx.fillStyle=disc; ctx.fill();
+  }
+
+  // ── Clouds ────────────────────────────────────────────────
+  function drawClouds() {
+    const ws = window._weatherState;
+    // Spawn new clouds as they drift off right edge
+    while (clouds.length < (ws >= 2 ? 10 : 5)) spawnCloud(true);
+
+    for (let i=clouds.length-1;i>=0;i--) {
+      const cl = clouds[i];
+      cl.x += cl.vx;
+      if (cl.x > W + cl.scale*200) { clouds.splice(i,1); continue; }
+
+      // Darken clouds for rain/storm
+      const bright = ws >= 5 ? 140 : ws >= 3 ? 175 : 220;
+      ctx.save();
+      ctx.translate(cl.x, cl.y);
+      ctx.globalAlpha = cl.alpha * (ws >= 2 ? 1.3 : 1);
+      for (const p of cl.puffs) {
+        ctx.beginPath();
+        ctx.ellipse(p.ox, p.oy, p.rx, p.ry, 0, 0, Math.PI*2);
+        ctx.fillStyle=`rgb(${bright},${bright},${bright+10})`;
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  // ── Fog overlay ──────────────────────────────────────────
+  function drawFog() {
+    if (window._weatherState !== 6) return;
+    const tSec = t*0.016;
+    for (let i=0;i<3;i++) {
+      const x = (W*0.5 + Math.sin(tSec*0.01+i*2.1)*W*0.35 - W*0.2);
+      const g=ctx.createRadialGradient(x,H*0.4,0,x,H*0.4,W*0.55);
+      g.addColorStop(0,'rgba(180,190,200,0.18)');
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  // ── Precipitation ─────────────────────────────────────────
+  function drawPrecip() {
+    const ws = window._weatherState;
+    if (ws < 2) { drops=[]; return; }
+    const isSnow = ws === 4;
+    const isStorm = ws >= 5;
+    const spawnRate = isStorm ? 6 : ws >= 3 ? 3 : 1;
+    for (let i=0;i<spawnRate;i++) spawnDrop(isSnow);
+
+    for (let i=drops.length-1;i>=0;i--) {
+      const d=drops[i];
+      if (d.snow) {
+        d.wobble+=d.ws; d.x+=d.vx+Math.sin(d.wobble)*0.3; d.y+=d.vy;
+        if (d.y>H) { drops.splice(i,1); continue; }
+        ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(220,235,255,${0.55+Math.sin(d.wobble)*0.15})`; ctx.fill();
+      } else {
+        d.x+=d.vx; d.y+=d.vy;
+        if (d.y>H) { drops.splice(i,1); continue; }
+        ctx.beginPath();
+        ctx.moveTo(d.x,d.y);
+        ctx.lineTo(d.x+d.vx*1.5, d.y-d.len);
+        ctx.strokeStyle=`rgba(180,210,235,${isStorm?0.55:0.35})`;
+        ctx.lineWidth=isStorm?1.2:0.8; ctx.stroke();
+      }
+    }
+  }
+
+  // ── Waves ─────────────────────────────────────────────────
+  function drawWaves() {
+    for (const w of WAVES) {
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let x=0;x<=W;x+=5) {
+        const y = waveY(w,x);
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+      ctx.fillStyle=w.col; ctx.fill();
+      // Subtle crest highlight
+      ctx.beginPath();
+      for (let x=0;x<=W;x+=5){const y=waveY(w,x)-1.5;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+      ctx.strokeStyle='rgba(200,230,245,0.12)'; ctx.lineWidth=1.8; ctx.stroke();
+    }
+  }
+
+  // ── Foam ──────────────────────────────────────────────────
+  function drawFoam() {
+    while (foam.length < 40) spawnFoam();
+    for (let i=foam.length-1;i>=0;i--) {
+      const p=foam[i];
+      p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
+      if (p.life<=0){foam.splice(i,1);continue;}
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);
+      ctx.fillStyle=`rgba(210,235,248,${p.life*0.50})`; ctx.fill();
+    }
+  }
+
+  // ── Horizon shimmer ───────────────────────────────────────
+  function drawHorizonShimmer() {
+    if (window._weatherState >= 3) return;
+    const refY=H*0.45;
+    const tSec=t*0.016;
+    for (let i=0;i<6;i++) {
+      const sx = (W*0.2+i*W*0.12+Math.sin(tSec*0.04+i)*W*0.04);
+      const a  = 0.06+Math.sin(tSec*0.08+i*0.8)*0.04;
+      ctx.beginPath();
+      ctx.ellipse(sx,refY,W*0.04,2.5,0,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,240,180,${a})`; ctx.fill();
+    }
+  }
+
+  // ── Seagulls ──────────────────────────────────────────────
+  function drawGulls() {
+    if (window._weatherState >= 5) return; // hide in storm
+    for (const g of gulls) {
+      g.x+=g.vx; g.wing+=0.03; // very slow wing beat
+      if (g.x>W+20){g.x=-20;g.y=H*(0.07+Math.random()*0.15);}
+      ctx.save(); ctx.translate(g.x,g.y);
+      ctx.strokeStyle='rgba(190,215,235,0.45)'; ctx.lineWidth=1.5; ctx.lineCap='round';
+      const wf=Math.sin(g.wing)*5;
+      ctx.beginPath();
+      ctx.moveTo(-10,0);ctx.quadraticCurveTo(-5,-wf,0,0);
+      ctx.moveTo(0,0);ctx.quadraticCurveTo(5,-wf,10,0);
+      ctx.stroke(); ctx.restore();
+    }
+  }
+
+  function loop() {
+    drawSky();
+    drawSun();
+    drawClouds();
+    drawFog();
+    drawHorizonShimmer();
+    drawWaves();
+    drawFoam();
+    drawPrecip();
+    drawGulls();
+    t++;
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resize);
+  resize(); loop();
+})();
+
+
+
+// ── CLOCK ──
+function updateClock() {
+  const n=new Date(); let h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();
+  const ampm=h>=12?'PM':'AM'; h=h%12||12;
+  document.getElementById('clock').textContent=`${h}:${String(m).padStart(2,'0')}`;
+  document.getElementById('clock-ampm').textContent=ampm;
+  const D=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('date-display').textContent=`${D[n.getDay()]}, ${M[n.getMonth()]} ${n.getDate()}, ${n.getFullYear()}`;
+  if (m%5===0 && s===0) triggerClockEffect('flame');
+}
+setInterval(updateClock,1000); updateClock();
+
+let _clockEffectTimer=null;
+function triggerClockEffect(type) {
+  if (_clockEffectTimer) return;
+  const row=document.getElementById('clock-row');
+  if (!row) return;
+  row.classList.add('flame-effect');
+  let n=0;
+  _clockEffectTimer=setInterval(()=>{
+    const rect=row.getBoundingClientRect();
+    const el=document.createElement('span');
+    el.className='clock-particle';
+    const px=(Math.random()-0.5)*60, py=-(15+Math.random()*35);
+    el.style.cssText=`left:${rect.left+rect.width/2+px}px;top:${rect.bottom-4}px;
+      width:8px;height:14px;border-radius:50% 50% 35% 35%;
+      background:radial-gradient(circle at 50% 80%,#ff6600 0%,#ffcc00 50%,transparent 100%);
+      animation:clockParticle 1.1s ease-out forwards;`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1100);
+    if (++n>=20){clearInterval(_clockEffectTimer);_clockEffectTimer=null;row.classList.remove('flame-effect');}
+  },75);
+}
+ updateClock();
+
+// ── WEATHER ──
+const WC={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+const WD={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Heavy showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm + hail',99:'Heavy thunderstorm'};
+async function fetchWeather(){
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}&current=temperature_2m,weathercode,windspeed_10m&temperature_unit=celsius&timezone=America%2FHalifax`);
+    const d=await r.json(); const c=d.current;
+    document.getElementById('weather-icon').textContent=WC[c.weathercode]||'🌡️';
+    // Set weather state for ocean animation
+    const code=c.weathercode;
+    window._weatherState = (code>=95)?5:(code>=80||code>=61&&code<=65)?3:(code>=51&&code<=55)?2:(code>=71&&code<=75)?4:(code===45||code===48)?6:(code>=2&&code<=3)?1:0;
+    document.getElementById('weather-temp').textContent=`${Math.round(c.temperature_2m)}°C`;
+    document.getElementById('weather-desc').textContent=WD[c.weathercode]||'Kennetcook, NS';
+    document.getElementById('weather-location').textContent=`Wind: ${Math.round(c.windspeed_10m)} km/h`;
+  }catch(e){document.getElementById('weather-desc').textContent='Weather unavailable';}
+}
+fetchWeather(); setInterval(fetchWeather,600000);
+
+// ── SLIDES ──
+// ══════════════════════════════════════════════════════
+//  SIMPLIFIED 3-COLUMN CSV PARSER
+//  Columns (by position, headers optional):
+//    A (col 0) = content  — post text, URL, FB embed, iframe
+//    B (col 1) = imageurl — optional image URL
+//    C (col 2) = active   — "yes" to show, anything else = hide
+//  Header row is detected automatically and skipped.
+// ══════════════════════════════════════════════════════
+function parseCSV(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  function splitLine(line) {
+    const fields = []; let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') inQ = !inQ;
+      else if (ch === ',' && !inQ) { fields.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    fields.push(cur.trim());
+    return fields.map(f => f.replace(/^"|"$/g,'').trim());
+  }
+  const first = splitLine(lines[0]);
+  const looksHeader = first[0] && first[0].length < 30 &&
+    /^(title|post|content|body|text|a)$/i.test(first[0].replace(/\s+/g,''));
+  const data = looksHeader ? lines.slice(1) : lines;
+  return data.map(line => {
+    const f = splitLine(line);
+    return { title:f[0]||'', content:f[1]||'', imageurl:f[2]||'', linkurl:f[3]||'', active:f[4]||'' };
+  }).filter(r => r.active.toLowerCase()==='yes');
+}
+// ── 4 animated emoji icons — randomly selected per slide ──
+// Returns an SVG string for each icon type
+const SLIDE_ICONS = ['flame','spark','books','basketball'];
+
+function getAnimIcon(type) {
+  const icons = {
+    flame: `<svg class="slide-anim-icon" viewBox="0 0 48 60" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .flame-core { animation: flameWave 1.8s ease-in-out infinite; transform-origin: 24px 54px; }
+        .flame-mid  { animation: flameWave 1.4s ease-in-out infinite 0.2s; transform-origin: 24px 54px; }
+        .flame-tip  { animation: flameTip  2.2s ease-in-out infinite 0.1s; transform-origin: 24px 40px; }
+        @keyframes flameWave { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(0.88) scaleY(1.06)} }
+        @keyframes flameTip  { 0%,100%{transform:rotate(0deg) scaleY(1)} 33%{transform:rotate(-4deg) scaleY(1.1)} 66%{transform:rotate(3deg) scaleY(0.95)} }
+      </style>
+      <g class="flame-core">
+        <path d="M24 54 C10 54 6 42 10 32 C13 24 18 20 24 10 C30 20 35 24 38 32 C42 42 38 54 24 54Z" fill="#e84a10" opacity="0.95"/>
+      </g>
+      <g class="flame-mid">
+        <path d="M24 52 C14 52 11 43 14 35 C17 28 20 24 24 16 C28 24 31 28 34 35 C37 43 34 52 24 52Z" fill="#f77020" opacity="0.9"/>
+      </g>
+      <g class="flame-tip">
+        <path d="M24 48 C18 48 16 41 18 35 C20 30 22 27 24 21 C26 27 28 30 30 35 C32 41 30 48 24 48Z" fill="#ffc040" opacity="0.95"/>
+        <path d="M24 44 C21 44 20 39 21 35 C22 31 23 29 24 25 C25 29 26 31 27 35 C28 39 27 44 24 44Z" fill="#fff0a0" opacity="0.8"/>
+      </g>
+    </svg>`,
+
+    spark: `<svg class="slide-anim-icon" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .sp1{animation:sparkOrbit1 2.4s linear infinite;transform-origin:28px 28px}
+        .sp2{animation:sparkOrbit2 1.9s linear infinite;transform-origin:28px 28px}
+        .sp3{animation:sparkOrbit3 2.8s linear infinite 0.4s;transform-origin:28px 28px}
+        .spCore{animation:sparkPulse 1.5s ease-in-out infinite;transform-origin:28px 28px}
+        @keyframes sparkOrbit1{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes sparkOrbit2{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+        @keyframes sparkOrbit3{from{transform:rotate(45deg)}to{transform:rotate(405deg)}}
+        @keyframes sparkPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+      </style>
+      <g class="spCore">
+        <circle cx="28" cy="28" r="8" fill="#f5c842"/>
+        <circle cx="28" cy="28" r="5" fill="#fff8c0"/>
+      </g>
+      <g class="sp1">
+        <circle cx="28" cy="10" r="3.5" fill="#f5a623" opacity="0.9"/>
+        <circle cx="28" cy="46" r="2.5" fill="#f5a623" opacity="0.7"/>
+      </g>
+      <g class="sp2">
+        <circle cx="10" cy="28" r="2.8" fill="#e84a10" opacity="0.85"/>
+        <circle cx="46" cy="28" r="2" fill="#e84a10" opacity="0.65"/>
+      </g>
+      <g class="sp3">
+        <circle cx="28" cy="6" r="2" fill="#60d0ff" opacity="0.8"/>
+        <circle cx="28" cy="50" r="1.5" fill="#a0e0ff" opacity="0.6"/>
+        <path d="M22 28 L28 6 L34 28" stroke="#f5c842" stroke-width="1.5" fill="none" opacity="0.4"/>
+      </g>
+    </svg>`,
+
+    books: `<svg class="slide-anim-icon" viewBox="0 0 60 56" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .bk1{animation:bookBob 2.8s ease-in-out infinite}
+        .bk2{animation:bookBob 2.8s ease-in-out infinite 0.35s}
+        .bk3{animation:bookBob 2.8s ease-in-out infinite 0.7s}
+        .bkStar{animation:starSpin 3s linear infinite;transform-origin:50px 8px}
+        @keyframes bookBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+        @keyframes starSpin{0%,100%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.2)}}
+      </style>
+      <g class="bk3">
+        <rect x="4" y="16" width="14" height="34" rx="2" fill="#2980b9"/>
+        <rect x="4" y="16" width="3" height="34" rx="1" fill="#1a5f8a"/>
+        <rect x="6" y="22" width="8" height="1.5" rx="0.75" fill="#7ec8f0" opacity="0.7"/>
+        <rect x="6" y="26" width="6" height="1.5" rx="0.75" fill="#7ec8f0" opacity="0.5"/>
+      </g>
+      <g class="bk2">
+        <rect x="21" y="10" width="16" height="40" rx="2" fill="#27ae60"/>
+        <rect x="21" y="10" width="3.5" height="40" rx="1" fill="#1a7a44"/>
+        <rect x="24" y="18" width="9" height="1.5" rx="0.75" fill="#90e8b0" opacity="0.7"/>
+        <rect x="24" y="22" width="7" height="1.5" rx="0.75" fill="#90e8b0" opacity="0.5"/>
+        <rect x="24" y="26" width="10" height="1.5" rx="0.75" fill="#90e8b0" opacity="0.5"/>
+      </g>
+      <g class="bk1">
+        <rect x="40" y="18" width="14" height="32" rx="2" fill="#e74c3c"/>
+        <rect x="40" y="18" width="3" height="32" rx="1" fill="#a93226"/>
+        <rect x="43" y="24" width="7" height="1.5" rx="0.75" fill="#f0a0a0" opacity="0.7"/>
+        <rect x="43" y="28" width="9" height="1.5" rx="0.75" fill="#f0a0a0" opacity="0.5"/>
+      </g>
+      <g class="bkStar">
+        <path d="M50 4 L51.2 7.2 L54.6 7.2 L51.9 9.2 L52.9 12.4 L50 10.5 L47.1 12.4 L48.1 9.2 L45.4 7.2 L48.8 7.2Z" fill="#f5c842"/>
+      </g>
+    </svg>`,
+
+    basketball: `<svg class="slide-anim-icon" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .bbBall{animation:bbBounce 1.4s cubic-bezier(0.36,0,0.66,0) infinite;transform-origin:28px 28px}
+        .bbShad{animation:bbShadow 1.4s ease-in-out infinite;transform-origin:28px 50px}
+        @keyframes bbBounce{
+          0%{transform:translateY(0) scaleX(1) scaleY(1)}
+          45%{transform:translateY(14px) scaleX(1.12) scaleY(0.88)}
+          50%{transform:translateY(15px) scaleX(1.14) scaleY(0.86)}
+          55%{transform:translateY(14px) scaleX(1.12) scaleY(0.88)}
+          100%{transform:translateY(0) scaleX(1) scaleY(1)}
+        }
+        @keyframes bbShadow{
+          0%,100%{transform:scaleX(0.7);opacity:0.25}
+          50%{transform:scaleX(1.1);opacity:0.45}
+        }
+      </style>
+      <ellipse class="bbShad" cx="28" cy="51" rx="10" ry="3" fill="rgba(0,0,0,0.35)"/>
+      <g class="bbBall">
+        <circle cx="28" cy="26" r="20" fill="#e8650a"/>
+        <circle cx="28" cy="26" r="20" fill="none" stroke="#c04a06" stroke-width="1.5" opacity="0.4"/>
+        <!-- seams -->
+        <path d="M8 26 Q18 20 28 26 Q38 32 48 26" fill="none" stroke="#c04a06" stroke-width="1.8"/>
+        <path d="M8 26 Q18 32 28 26 Q38 20 48 26" fill="none" stroke="#c04a06" stroke-width="1.8"/>
+        <path d="M28 6 Q22 16 28 26 Q34 36 28 46" fill="none" stroke="#c04a06" stroke-width="1.8"/>
+        <!-- shine -->
+        <ellipse cx="21" cy="18" rx="6" ry="4" fill="rgba(255,220,150,0.30)" transform="rotate(-20,21,18)"/>
+      </g>
+    </svg>`,
+  };
+  return icons[type] || icons['spark'];
+}
+
+// Pick a random icon type, but keep it stable per slide index
+function iconForSlide(idx) {
+  return SLIDE_ICONS[idx % SLIDE_ICONS.length];
+}
+
+// ── renderBodyContent — handles plain text, FB embeds, iframes ──
+function renderBodyContent(bodyText) {
+  if (!bodyText) return '';
+  const decoded = bodyText.trim()
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
+    .replace(/&#60;/g,'<').replace(/&#62;/g,'>').replace(/&#38;/g,'&').replace(/&quot;/g,'"');
+
+  const isFBEmbed = decoded.includes('class="fb-post"')||decoded.includes("class='fb-post'")||
+                    decoded.includes('class="fb-video"')||decoded.includes("class='fb-video'")||
+                    (decoded.includes('data-href')&&decoded.includes('facebook.com'));
+  const isIframe  = decoded.trim().toLowerCase().startsWith('<iframe');
+
+  if (isFBEmbed) return '<div class="slide-embed">' + decoded + '</div>';
+  if (isIframe) {
+    if (isYouTube(decoded)) return '<div class="slide-embed" style="color:rgba(200,230,225,0.6);font-size:15px;padding:16px;">▶ Playing…</div>';
+    let html = decoded;
+    if (!html.match(/height=/i)) html = html.replace('<iframe','<iframe height="400"');
+    if (!html.match(/width=/i))  html = html.replace('<iframe','<iframe width="700"');
+    return '<div class="slide-embed">' + html + '</div>';
+  }
+  // Auto-embed bare YouTube URL
+  const bareYT = decoded.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^\s]*)/);
+  if (bareYT && !decoded.includes('<')) {
+    return `<div class="slide-embed yt-bare" data-ytid="${bareYT[2]}"><p style="color:rgba(200,230,225,0.6);font-size:15px;">▶ YouTube loading…</p></div>`;
+  }
+  // Rich plain text
+  let text = bodyText.trim()
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
+    .replace(/&#60;/g,'<').replace(/&#62;/g,'>').replace(/&#38;/g,'&');
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  text = text.replace(/(^|[\s\n>])(https?:\/\/[^\s<)"]+)/g,'$1<a href="$2" target="_blank">$2</a>');
+  text = text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  text = text.replace(/\n/g,'<br>');
+  const cls = text.replace(/<[^>]*>/g,'').length<=60 ? 'slide-body short-text' : 'slide-body';
+  return `<p class="${cls}">${text}</p>`;
+}
+// ── renderSlides — rebuilt for 3-column schema ───────────────
+function renderSlides() {
+  const c = document.getElementById('slide-container'); c.innerHTML = '';
+  const f = document.getElementById('footer');
+  const skipBtn  = document.getElementById('skip-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  f.innerHTML = '';
+  if (pauseBtn) f.appendChild(pauseBtn);
+  if (skipBtn)  f.appendChild(skipBtn);
+
+  slides.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'slide' + (i===0?' active':'');
+    const title    = s.title    || '';
+    const content  = s.content  || '';
+    const imageurl = s.imageurl || '';
+    const hasImage = /^https?:\/\//i.test(imageurl);
+    const hasTitle = title.trim().length > 0;
+    const decoded  = content.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+    const isIfrC   = decoded.trim().toLowerCase().startsWith('<iframe');
+    const isFBC    = decoded.includes('fb-post')||decoded.includes('fb-video')||
+                     (decoded.includes('data-href')&&decoded.includes('facebook.com'));
+    const isYTC    = isYouTube(decoded)||/youtu\.?be/.test(decoded);
+    const hasEmbed = (isIfrC && !isYTC) || isFBC;
+    const cardClasses = ['announce-card',hasImage?'has-image':'',hasEmbed?'has-embed':'',
+                          !hasImage&&!hasEmbed?'has-text':''].filter(Boolean).join(' ');
+    const iconType = iconForSlide(i);
+    const iconSVG  = getAnimIcon(iconType);
+
+    let titleHTML = '';
+    if (hasTitle) {
+      titleHTML = `<div class="post-title-row">
+        <span class="title-icon">${iconSVG}</span>
+        <h2 class="post-title themed-title">${title}</h2>
+        <span class="title-icon">${iconSVG}</span>
+      </div>`;
+    }
+
+    let imgHTML = hasImage
+      ? `<img class="slide-image" src="${imageurl}" alt=""
+           onload="fitSlideImage(this)" onerror="this.style.display='none'">`
+      : '';
+
+    let bodyHTML = '';
+    if (isYTC) {
+      bodyHTML = renderBodyContent(content);
+    } else if (hasImage) {
+      bodyHTML = content ? `<p class="slide-body image-caption">${content}</p>` : '';
+    } else {
+      bodyHTML = renderBodyContent(content);
+    }
+
+    let innerContent = '';
+    if (hasTitle) {
+      innerContent = titleHTML + imgHTML + bodyHTML;
+    } else {
+      innerContent = `<div class="content-with-icons">
+        <span class="side-icon left-icon">${iconSVG}</span>
+        <div class="content-center">${imgHTML}${bodyHTML}</div>
+        <span class="side-icon right-icon">${iconSVG}</span>
+      </div>`;
+    }
+
+    div.innerHTML = `<div class="${cardClasses}">${innerContent}</div>`;
+    c.appendChild(div);
+
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===0?' active':'');
+    dot.onclick = () => goToSlide(i);
+    f.insertBefore(dot, f.querySelector('#pause-btn') || f.firstChild);
+  });
+
+  requestAnimationFrame(applyDynamicText);
+  // Activate bare YouTube iframes
+  document.querySelectorAll('.yt-bare').forEach(el => {
+    const vid = el.dataset.ytid;
+    if (vid) {
+      el.innerHTML = '';
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube.com/embed/${vid}?autoplay=0`;
+      frame.setAttribute('allowfullscreen','');
+      frame.setAttribute('allow','autoplay; fullscreen');
+      frame.style.cssText = 'width:100%;height:360px;border:none;border-radius:10px;';
+      el.appendChild(frame);
+    }
+  });
+}
+// ── Dynamic font sizing ─────────────────────────────────────
+// Uses BOTH word count and character count, and scales based on
+// available card height so text always fits without overflow.
+function applyDynamicText() {
+  document.querySelectorAll('.slide').forEach(slide => {
+    const body = slide.querySelector('.slide-body');
+    const card = slide.querySelector('.announce-card');
+    if (!card || !body) return;
+    if (card.classList.contains('has-embed') || card.classList.contains('has-image')) return;
+    const chars = body.textContent.trim().length;
+    let sz = chars<=16?56 : chars<=35?46 : chars<=70?38 : chars<=140?30 :
+             chars<=250?24 : chars<=400?20 : chars<=600?17 : chars<=900?15 :
+             chars<=1800?13 : chars<=3000?12 : 10;
+    body.style.fontSize  = sz + 'px';
+    body.style.lineHeight = sz>=40?'1.2' : sz>=26?'1.4' : '1.6';
+    requestAnimationFrame(() => {
+      for (let i=0; i<8 && body.scrollHeight > card.clientHeight-20; i++) {
+        sz = Math.max(9, sz-1.5); body.style.fontSize = sz+'px';
+      }
+    });
+  });
+}
+// ── Image fitting ────────────────────────────────────────────
+function fitSlideImage(img) {
+  const card = img.closest('.announce-card');
+  if (!card) return;
+  const cardH = card.offsetHeight || 420;
+  const captionH = 50;
+  const targetH = Math.max(160, cardH - captionH);
+  img.style.maxHeight = targetH + 'px';
+  img.style.height    = targetH + 'px';
+}
+
+const FALLBACK=[
+  {content:'Good morning, Hants North Rural High! Have a great day.',imageurl:'',active:'yes'},
+  {content:'Add your Google Sheets CSV URL to the sheetsURL config to display announcements here.',imageurl:'',active:'yes'},
+  {content:'Hants North Rural High - Part of the Chignecto-Central Regional Centre for Education.',imageurl:'',active:'yes'},
+];
+let slides = [];
+
+async function loadSlides() {
+  if (!CONFIG.sheetsURL || CONFIG.sheetsURL.includes('YOUR_GOOGLE_SHEETS')) {
+    slides = FALLBACK; return;
+  }
+  try {
+    const r = await fetch(CONFIG.sheetsURL);
+    const t = await r.text();
+    const p = parseCSV(t);
+    slides = p.length > 0 ? p : FALLBACK;
+  } catch(e) { slides = FALLBACK; }
+}
+
+// ════════════════════════════════════════════════════════
+//  SLIDE ENGINE — reliable 8-second auto-advance
+//  + YouTube-style skip button with countdown ring
+// ════════════════════════════════════════════════════════
+
+// Duration constants
+
+// ── SLIDE ENGINE ──────────────────────────────────────────────
+const SLIDE_MS  = 8000;
+const IFRAME_MS = 16000;
+const VIDEO_MS  = 240000;
+let currentSlide = 0;
+let _advanceTimer = null;
+let _countdownRAF = null;
+let _paused = false;
+
+function _setProgressBar(ms) {
+  const bar = document.getElementById('progress-bar');
+  if (!bar) return;
+  bar.style.transition='none'; bar.style.width='0%';
+  void bar.offsetWidth;
+  bar.style.transition=`width ${ms}ms linear`; bar.style.width='100%';
+}
+function _startCountdown(ms) {
+  if (_countdownRAF) cancelAnimationFrame(_countdownRAF);
+  const el = document.getElementById('skip-countdown');
+  if (!el) return;
+  const start = performance.now();
+  function tick(now) {
+    const pct = Math.min(100,(now-start)/ms*100);
+    const secs = Math.ceil(Math.max(0,ms-(now-start))/1000);
+    el.textContent = secs>0?secs:'›';
+    el.style.background=`conic-gradient(rgba(255,255,255,0.55) ${pct}%,rgba(255,255,255,0.10) ${pct}%)`;
+    if ((now-start)<ms) _countdownRAF=requestAnimationFrame(tick);
+  }
+  _countdownRAF=requestAnimationFrame(tick);
+}
+function _durationFor(idx) {
+  if (!slides[idx]) return SLIDE_MS;
+  const d = (slides[idx].content||'').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  const ifrOk = d.trim().toLowerCase().startsWith('<iframe') && !isYouTube(d);
+  const isFB  = d.includes('fb-post')||d.includes('fb-video');
+  return (ifrOk||isFB) ? IFRAME_MS : SLIDE_MS;
+}
+function _startTimer(ms) {
+  if (_advanceTimer) clearTimeout(_advanceTimer);
+  if (_paused) return;
+  _setProgressBar(ms); _startCountdown(ms);
+  _advanceTimer = setTimeout(() => goToSlide((currentSlide+1)%slides.length), ms);
+}
+
+function goToSlide(idx) {
+  if (!slides||!slides.length) return;
+  idx = ((idx%slides.length)+slides.length)%slides.length;
+  const allS=document.querySelectorAll('.slide'), allD=document.querySelectorAll('.dot');
+  if (allS.length) {
+    const prev=currentSlide;
+    allS[prev].classList.remove('active'); allS[prev].classList.add('exit');
+    if (allD[prev]) allD[prev].classList.remove('active');
+    setTimeout(()=>allS[prev]&&allS[prev].classList.remove('exit'),700);
+  }
+  currentSlide=idx;
+  if (allS[idx]) allS[idx].classList.add('active');
+  if (allD[idx]) allD[idx].classList.add('active');
+  if (window.updateQRForSlide&&slides[idx]) updateQRForSlide(slides[idx]);
+  requestAnimationFrame(applyDynamicText);
+  setTimeout(reprocessFBEmbeds,450);
+  const s=slides[idx];
+  if (s&&isVideoContent(s.content||'')) {
+    const m=(s.content||'').match(/src=["']([^"']+)["']/i);
+    const bare=(s.content||'').match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^\s]*)/);
+    const ytSrc=m?m[1]:(bare?`https://www.youtube.com/embed/${bare[2]}`:null);
+    if (ytSrc) { _startTimer(VIDEO_MS); showYouTube(ytSrc,()=>goToSlide((currentSlide+1)%slides.length)); return; }
+  }
+  hideYouTube();
+  _startTimer(_durationFor(idx));
+}
+
+window._skipSlide = function() {
+  const box=document.getElementById('yt-expand');
+  if (box&&box.classList.contains('active')) { hideYouTube(); goToSlide((currentSlide+1)%slides.length); return; }
+  if (_advanceTimer) clearTimeout(_advanceTimer);
+  if (_countdownRAF) cancelAnimationFrame(_countdownRAF);
+  goToSlide((currentSlide+1)%slides.length);
+};
+window._togglePause = function() {
+  _paused=!_paused;
+  const btn=document.getElementById('pause-btn');
+  if (btn) { btn.textContent=_paused?'▶':'⏸'; btn.classList.toggle('paused',_paused); }
+  if (_paused) {
+    if (_advanceTimer) clearTimeout(_advanceTimer);
+    if (_countdownRAF) cancelAnimationFrame(_countdownRAF);
+    const bar=document.getElementById('progress-bar');
+    if (bar) bar.style.transition='none';
+  } else {
+    _startTimer(5000);
+  }
+};
+function nextSlide() { goToSlide((currentSlide+1)%slides.length); }
+function startProgressBar() { _startTimer(_durationFor(currentSlide)); }
+
+
+function extractURLs(text) {
+  if (!text) return [];
+  const stripped = text.replace(/<[^>]*>/g,' ');
+  return [...new Set((stripped.match(/https?:\/\/[^\s<>"',)\]]+/g)||[]))];
+}
+function shortLabel(url) {
+  try { const u=new URL(url); let l=u.hostname.replace('www.','')+u.pathname.replace(/\/$/,''); return l.length>26?l.slice(0,24)+'…':l; }
+  catch { return url.slice(0,26); }
+}
+function buildQRItem(url, glowFlame) {
+  const wrap = document.createElement('div');
+  wrap.className = 'qr-item' + (glowFlame ? ' qr-flame' : '');
+  const box = document.createElement('div'); box.className = 'qr-box';
+  const lbl = document.createElement('div'); lbl.className = 'qr-label';
+  lbl.textContent = glowFlame ? '🔗 Scan Link' : shortLabel(url);
+  wrap.appendChild(box); wrap.appendChild(lbl);
+  try { new QRCode(box,{text:url,width:108,height:108,colorDark:'#111',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M}); }
+  catch(e) {}
+  return wrap;
+}
+window.updateQRForSlide = function(slideData) {
+  const panel = document.getElementById('qr-panel');
+  if (!panel) return;
+  panel.innerHTML = ''; panel.style.opacity = '0';
+  if (!slideData) return;
+  const text = (slideData.title||'') + ' ' + (slideData.content||'');
+  const contentURLs = extractURLs(text).slice(0,3);
+  const linkURL = (slideData.linkurl||'').trim();
+  if (!contentURLs.length && !linkURL) return;
+  const build = () => {
+    if (!window._qrReady) { setTimeout(build, 80); return; }
+    panel.innerHTML = '';
+    contentURLs.forEach(url => panel.appendChild(buildQRItem(url, false)));
+    if (linkURL) panel.appendChild(buildQRItem(linkURL, true));
+    setTimeout(() => panel.style.opacity='1', 120);
+  };
+  setTimeout(build, 100);
+};
+
+
+
+// ══════════════════════════════════════════════════════
+//  EMBED ENGINE — Facebook SDK + iframe support
+// ══════════════════════════════════════════════════════
+(function loadFBSDK() {
+  if (document.getElementById('facebook-jssdk')) return;
+  window.fbAsyncInit = function() {
+    FB.init({ xfbml: true, version: 'v19.0' });
+  };
+  const js = document.createElement('script');
+  js.id = 'facebook-jssdk';
+  js.src = 'https://connect.facebook.net/en_US/sdk.js';
+  js.async = true; js.defer = true;
+  document.head.appendChild(js);
+})();
+
+function reprocessFBEmbeds() {
+  if (window.FB && window.FB.XFBML) {
+    try { FB.XFBML.parse(); } catch(e) {}
+  }
+}
+
+
+// ── SCHEDULE HIGHLIGHTER ──────────────────────────────────
+function timeToMins(s) {
+  const [h,m]=(s||'').split(':').map(Number); return (h||0)*60+(m||0);
+}
+function updateSchedule(){
+  const n=new Date(),cur=n.getHours()*60+n.getMinutes();
+  function toM(s){const[h,m]=(s||'').split(':').map(Number);return(h||0)*60+(m||0);}
+  const P3S=toM('10:55'),P3E=toM('12:35'),JRS=toM('11:15'),JRE=toM('11:55'),SRS=toM('11:55'),SRE=toM('12:35');
+  document.querySelectorAll('.sch-item').forEach(el=>{
+    const start=toM(el.dataset.start),end=toM(el.dataset.end);
+    el.classList.remove('active','past','also-active');
+    if(el.dataset.p3==='true'){
+      if(cur>=P3S&&cur<P3E) el.classList.add('active');
+      else if(cur>=P3E) el.classList.add('past');
+    } else if(el.dataset.jr==='true'){
+      if(cur>=JRS&&cur<JRE){el.classList.add('active');el.classList.add('also-active');}
+      else if(cur>=JRE) el.classList.add('past');
+    } else if(el.dataset.sr==='true'){
+      if(cur>=SRS&&cur<SRE){el.classList.add('active');el.classList.add('also-active');}
+      else if(cur>=SRE) el.classList.add('past');
+    } else {
+      if(cur>=start&&cur<end) el.classList.add('active');
+      else if(cur>=end) el.classList.add('past');
+    }
+  });
+}
+setInterval(updateSchedule,15000); updateSchedule();
+
+updateSchedule();
+
+// ── VIDEO FULLSCREEN OVERLAY ─────────────────────────────
+// Detects YouTube / Google Slides iframes, shows them fullscreen
+// Advances after video ends OR after 4 minutes, whichever is first
+let _videoTimer = null;
+
+
+// ════════════════════════════════════════════════════════
+//  YOUTUBE EXPAND ENGINE
+//  - YouTube iframes expand to fill space BETWEEN header+footer
+//  - Forces autoplay, auto-advances after 240 seconds
+//  - Header and footer NEVER covered
+//  - Skip button stays in footer at all times
+// ════════════════════════════════════════════════════════
+let _ytTimer   = null;
+let _ytDoneCallback = null;
+
+function isYouTube(src) {
+  return /youtube\.com|youtu\.be/.test(src);
+}
+function isGoogleSlides(src) {
+  return /docs\.google\.com\/presentation|slides\.google\.com/.test(src);
+}
+function isVideoContent(content) {
+  const d = (content || '').toLowerCase();
+  return isYouTube(d) || isGoogleSlides(d);
+}
+
+function getOrCreateYTBox() {
+  let box = document.getElementById('yt-expand');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'yt-expand';
+    // Insert BEFORE footer so it's naturally below footer in stacking
+    document.body.insertBefore(box, document.getElementById('footer'));
+  }
+  return box;
+}
+
+function showYouTube(rawSrc, onDone) {
+  _ytDoneCallback = onDone;
+
+  // Extract src from full iframe tag if needed
+  let src = rawSrc;
+  const srcMatch = rawSrc.match(/src=["']([^"']+)["']/i);
+  if (srcMatch) src = srcMatch[1];
+
+  // Normalize YouTube URL to embed format
+  src = src.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/');
+  // Strip existing autoplay, add fresh params
+  src = src.replace(/[?&]autoplay=\d/g, '');
+  if (!src.includes('/embed/')) {
+    // Fallback: just use as-is with autoplay
+  }
+  const sep = src.includes('?') ? '&' : '?';
+  src += sep + 'autoplay=1&mute=0&rel=0&modestbranding=1&enablejsapi=1';
+
+  const box = getOrCreateYTBox();
+  box.innerHTML = `<iframe src="${src}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  box.classList.add('active');
+
+  // Start 240-second countdown in skip button
+  _startCountdown(240000);
+  _setProgressBar(240000);
+
+  // Auto-advance after 240 seconds
+  if (_ytTimer) clearTimeout(_ytTimer);
+  _ytTimer = setTimeout(() => {
+    hideYouTube();
+    if (_ytDoneCallback) { _ytDoneCallback(); _ytDoneCallback = null; }
+  }, 240000);
+}
+
+function hideYouTube() {
+  if (_ytTimer) { clearTimeout(_ytTimer); _ytTimer = null; }
+  const box = document.getElementById('yt-expand');
+  if (box) {
+    box.classList.remove('active');
+    box.innerHTML = '';
+  }
+}
+
+// Override _skipSlide to handle YouTube dismissal
+const _baseSkipSlide = window._skipSlide;
+window._skipSlide = function() {
+  const box = document.getElementById('yt-expand');
+  if (box && box.classList.contains('active')) {
+    hideYouTube();
+    if (_ytDoneCallback) { _ytDoneCallback(); _ytDoneCallback = null; }
+    return;
+  }
+  if (_baseSkipSlide) _baseSkipSlide();
+};
+
+
+
+
+
+(function headerSwap() {
+  let logoOnLeft=true;
+  function doSwap() {
+    logoOnLeft=!logoOnLeft;
+    const left=document.getElementById('header-left');
+    const right=document.getElementById('header-right');
+    const logoGrp=document.getElementById('logo-group');
+    const wx=document.getElementById('weather-widget');
+    if (!logoGrp||!wx) return;
+    [logoGrp,wx].forEach(el=>{el.style.transition='opacity 0.5s ease';el.style.opacity='0';});
+    setTimeout(()=>{
+      if (logoOnLeft) { left.insertBefore(logoGrp,left.firstChild); right.appendChild(wx); }
+      else            { right.insertBefore(logoGrp,right.firstChild); left.appendChild(wx); }
+      [logoGrp,wx].forEach(el=>{el.style.opacity='1';});
+    },520);
+  }
+  const left=document.getElementById('header-left');
+  const logo=document.getElementById('school-logo');
+  const name=document.getElementById('school-name');
+  if (left&&logo&&name) {
+    const grp=document.createElement('div');
+    grp.id='logo-group'; grp.style.cssText='display:flex;align-items:center;gap:14px;';
+    grp.appendChild(logo); grp.appendChild(name);
+    left.insertBefore(grp,left.firstChild);
+  }
+  setInterval(doSwap,20*60*1000);
+})();
+
+async function init(){
+  await loadSlides();renderSlides();startProgressBar();
+  if(window.updateQRForSlide && slides[0]) updateQRForSlide(slides[0]);
+  setTimeout(reprocessFBEmbeds, 700);
+  document.getElementById('loading-overlay').classList.add('hidden');
+  setInterval(async()=>{const old=slides.length;await loadSlides();if(slides.length!==old){renderSlides();currentSlide=0;startProgressBar();}},CONFIG.refreshInterval);
+}
+init();
+</script>
+</body>
+</html>
