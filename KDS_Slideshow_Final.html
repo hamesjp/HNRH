@@ -1951,6 +1951,10 @@ function renderBodyContent(bodyText) {
   }
   // Auto-embed bare YouTube URL
   const bareYT = decoded.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^\s]*)/);
+  if (!decoded.includes('<') && isGoogleSlidesURL(decoded)) {
+    return '<div class="slide-embed" style="color:rgba(200,230,225,0.55);font-size:16px;padding:24px;text-align:center;">▶ Loading presentation…</div>';
+  }
+
   if (bareYT && !decoded.includes('<')) {
     return `<div class="slide-embed yt-bare" data-ytid="${bareYT[2]}"><p style="color:rgba(200,230,225,0.6);font-size:15px;">▶ YouTube loading…</p></div>`;
   }
@@ -2187,43 +2191,64 @@ function _startTimer(ms) {
 function goToSlide(idx) {
   if (!slides||!slides.length) return;
   idx = ((idx%slides.length)+slides.length)%slides.length;
-  const allS=document.querySelectorAll('.slide'), allD=document.querySelectorAll('.dot');
+
+  const allS = document.querySelectorAll('.slide');
+  const allD = document.querySelectorAll('.dot');
   if (allS.length) {
-    const prev=currentSlide;
+    const prev = currentSlide;
     allS[prev].classList.remove('active'); allS[prev].classList.add('exit');
     if (allD[prev]) allD[prev].classList.remove('active');
-    setTimeout(()=>allS[prev]&&allS[prev].classList.remove('exit'),700);
+    setTimeout(() => allS[prev] && allS[prev].classList.remove('exit'), 700);
   }
-  currentSlide=idx;
+  currentSlide = idx;
   if (allS[idx]) allS[idx].classList.add('active');
-  maybeBurstTitle(idx);
   if (allD[idx]) allD[idx].classList.add('active');
-  if (window.updateQRForSlide&&slides[idx]) updateQRForSlide(slides[idx]);
+  maybeBurstTitle(idx);
+  if (window.updateQRForSlide && slides[idx]) updateQRForSlide(slides[idx]);
   requestAnimationFrame(applyDynamicText);
-  setTimeout(reprocessFBEmbeds,450);
-  const s=slides[idx];
-  if (s&&isVideoContent(s.content||'')) {
-    const rawContent=(s.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
-    // Match src= with or without quotes (CSV parser may strip quotes)
-    const m=rawContent.match(/src=["']?([^"'\s>]+youtube[^"'\s>]*)["']?/i);
-    const bareYT=rawContent.match(/(https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([\w-]+)[^\s]*)/);
-    const ytSrc=m?m[1]:( bareYT?bareYT[1]:null);
-    if (ytSrc) { _startTimer(VIDEO_MS); showYouTube(ytSrc,()=>goToSlide((currentSlide+1)%slides.length)); return; }
-  }
-  // Google Slides bare URL or iframe
-  if (s && isGoogleSlidesURL(rawContent)) {
-    const gsM = rawContent.match(/src=["']?([^"'\s>]+presentation[^"'\s>]*)["']?/i);
-    const gsSrc = gsM ? gsM[1].replace(/&amp;/g,'&') : rawContent.trim();
-    if (gsSrc && isGoogleSlidesURL(gsSrc)) {
-      _startTimer(SLIDES_MS);
-      showGoogleSlides(gsSrc, ()=>goToSlide((currentSlide+1)%slides.length));
+  setTimeout(reprocessFBEmbeds, 450);
+
+  const s = slides[idx];
+  if (!s) { hideYouTube(); _startTimer(_durationFor(idx)); return; }
+
+  // ── Decode content ONCE at function scope (not inside any if block) ──
+  const rawContent = (s.content || '')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+    .replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  const rawLower = rawContent.toLowerCase();
+
+  // ── YouTube: bare URL or iframe ──────────────────────────────
+  if (isYouTube(rawLower) || /youtu\.be/.test(rawLower)) {
+    const mYT = rawContent.match(/src=["']?([^"'\s>]+youtube[^"'\s>]*)["']?/i);
+    const bareYT = rawContent.match(
+      /(https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([\w-]+)[^\s]*)/
+    );
+    const ytSrc = mYT ? mYT[1] : (bareYT ? bareYT[1] : null);
+    if (ytSrc) {
+      _startTimer(VIDEO_MS);
+      showYouTube(ytSrc, () => goToSlide((currentSlide+1)%slides.length));
       return;
     }
   }
+
+  // ── Google Slides: bare URL or iframe ────────────────────────
+  if (isGoogleSlidesURL(rawLower)) {
+    // Try to extract src= attribute first (iframe case)
+    const gsM = rawContent.match(/src=["']?([^"'\s>]+(?:presentation|slides\.google)[^"'\s>]*)["']?/i);
+    // Fallback: bare URL directly in content
+    const bGS = rawContent.match(/https?:\/\/[^\s<>"]+(?:presentation|slides\.google)[^\s<>"]*/i);
+    const gsSrc = gsM ? gsM[1] : (bGS ? bGS[0] : '');
+    if (gsSrc) {
+      _startTimer(SLIDES_MS);
+      showGoogleSlides(gsSrc, () => goToSlide((currentSlide+1)%slides.length));
+      return;
+    }
+  }
+
+  // ── Normal slide ──────────────────────────────────────────────
   hideYouTube();
   _startTimer(_durationFor(idx));
 }
-
 window._skipSlide = function() {
   const box=document.getElementById('yt-expand');
   if (box&&box.classList.contains('active')) { hideYouTube(); goToSlide((currentSlide+1)%slides.length); return; }
@@ -2484,20 +2509,26 @@ function showGoogleSlides(rawSrc, onDone) {
     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
     .replace(/&quot;/g,'"');
 
-  // Extract src from iframe if needed
-  const srcM = src.match(/src=["']?([^"'\s>]+presentation[^"'\s>]*)["']?/i);
+  // Extract src= from iframe tag if full iframe code was passed
+  const srcM = src.match(/src=["']?([^"'\s>]+(?:presentation|slides\.google)[^"'\s>]*)["']?/i);
   if (srcM) src = srcM[1].replace(/&amp;/g,'&');
 
-  // Convert /pub?... to /embed?... with autoplay
-  src = src
-    .replace(/\/pub(\?|$)/, '/embed$1')
-    .replace(/\/embed$/, '/embed?');
-
-  // Strip conflicting params, inject autoplay
-  src = src.replace(/[?&](start|loop|delayms)=[^&]*/g, '');
-  const sep = src.includes('?') && !src.endsWith('?') ? '&' : '';
-  src += sep + (src.endsWith('?') ? '' : '&') + 'start=true&loop=true&delayms=5000&rm=minimal';
-  src = src.replace(/&&+/g,'&').replace(/\?&/,'?');
+  // Normalise all Google Slides URL path variants → clean /embed URL
+  // Handles: /pub, /pubembed, /embed, /present, and any combination
+  // Extract base: everything up to and including the presentation ID path
+  const baseMAtch = src.match(/(https?:\/\/[^/]+\/.*?\/d\/e\/[^/]+)/);
+  if (baseMAtch) {
+    const base = baseMAtch[1];
+    src = `${base}/embed?start=true&loop=true&delayms=5000&rm=minimal`;
+  } else {
+    // Fallback: strip existing path suffix and add /embed
+    src = src
+      .replace(/\/pubembed(\?.*)?$/, '/embed')
+      .replace(/\/pub(\?.*)?$/, '/embed')
+      .replace(/\/present(\?.*)?$/, '/embed');
+    // Strip old params and add fresh ones
+    src = src.split('?')[0] + '?start=true&loop=true&delayms=5000&rm=minimal';
+  }
 
   const box = getOrCreateYTBox();
   box.innerHTML = `<iframe
