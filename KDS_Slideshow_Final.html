@@ -808,6 +808,116 @@
     100% { background-position: 300% center; filter: drop-shadow(0 0 6px rgba(245,200,66,0.4)); }
   }
 
+
+  /* Scale FB embed 1.25x for TV readability */
+  .slide-embed { transform-origin: top center; }
+  .slide-embed .fb-post,
+  .slide-embed .fb-video {
+    transform: scale(1.25);
+    transform-origin: top center;
+    max-width: 520px !important;
+  }
+  /* Add a subtle white frosted backdrop so FB text always readable */
+  .announce-card.has-embed .slide-embed {
+    background: rgba(255,255,255,0.92);
+    border-radius: 16px;
+    padding: 18px 20px 20px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.40);
+  }
+
+
+  /* KDS — slower gold sparkle shimmer */
+  .themed-title {
+    color: transparent !important;
+    background: linear-gradient(90deg,
+      #a07010 0%, #f5e842 12%, #fffde0 22%, #f5c842 32%,
+      #a07010 44%, #f5e842 56%, #fffde0 66%, #f5c842 78%,
+      #a07010 100%);
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: sparkleShimmer 5.5s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(245,210,80,0.60));
+  }
+  @keyframes sparkleShimmer {
+    0%   { background-position:0% center;   filter:drop-shadow(0 0 7px rgba(245,210,80,0.45)); }
+    50%  { background-position:150% center; filter:drop-shadow(0 0 18px rgba(255,248,120,0.80)); }
+    100% { background-position:300% center; filter:drop-shadow(0 0 7px rgba(245,210,80,0.45)); }
+  }
+
+  @keyframes titleBurst {
+    0%   { opacity:1; transform:translate(0,0) scale(1); }
+    100% { opacity:0; transform:translate(var(--tx,0px),var(--ty,-60px)) scale(0.2); }
+  }
+
+
+  /* ══ EMBED SLIDE: transparent outer area, content shrinks to widget ══ */
+
+  /* Override all prior embed card rules */
+  .slide.has-embed-slide .announce-card,
+  .announce-card.has-embed {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    width: 100%;
+    height: 100%;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .slide.has-embed-slide { padding: 0 !important; }
+
+  /* The .slide-embed wrapper: shrinks to content width */
+  .announce-card.has-embed .slide-embed {
+    width: auto !important;              /* shrinks to content, NOT 100% */
+    display: inline-flex !important;
+    flex-direction: column;
+    align-items: center;
+    max-width: 620px;
+    background: rgba(255,255,255,0.97);  /* clean white behind FB widget */
+    border-radius: 18px;
+    padding: 0;                          /* FB widget has own padding */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.50);
+    overflow: hidden;                    /* clip FB widget to our rounding */
+  }
+
+  /* FB widget fills wrapper width */
+  .announce-card.has-embed .slide-embed .fb-post,
+  .announce-card.has-embed .slide-embed .fb-video {
+    max-width: 560px !important;
+    transform: none !important;          /* remove the 1.25x scale (was too big) */
+    transform-origin: unset !important;
+  }
+
+  /* Non-FB iframes (Google Slides etc) also get clean container */
+  .announce-card.has-embed .slide-embed iframe {
+    border: none;
+    border-radius: 0;
+    display: block;
+    max-width: 100%;
+    box-shadow: none;
+  }
+
+
+  /* KDS — static gold, gentle glow breathe only */
+  .themed-title {
+    color: #f0c840 !important;
+    -webkit-text-fill-color: #f0c840 !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    animation: kdsGlowPulse 3.5s ease-in-out infinite;
+    text-shadow: 0 0 8px rgba(245,210,80,0.40);
+  }
+  @keyframes kdsGlowPulse {
+    0%,100% { text-shadow: 0 0 6px rgba(245,210,80,0.35); filter: brightness(1.00); }
+    50%     { text-shadow: 0 0 18px rgba(255,245,120,0.72), 0 0 4px rgba(255,255,200,0.5); filter: brightness(1.08); }
+  }
+
 </style>
 </head>
 <body>
@@ -1588,23 +1698,37 @@ function parseCSV(text) {
   const lines = text.trim().split('\n').filter(l => l.trim());
   if (!lines.length) return [];
   function splitLine(line) {
-    const fields = []; let cur = '', inQ = false;
-    for (const ch of line) {
-      if (ch === '"') inQ = !inQ;
-      else if (ch === ',' && !inQ) { fields.push(cur.trim()); cur = ''; }
-      else cur += ch;
+    const fields = []; let cur = '', inQ = false, i = 0;
+    while (i < line.length) {
+      const ch = line[i];
+      if (inQ) {
+        if (ch === '"') {
+          if (i + 1 < line.length && line[i+1] === '"') {
+            cur += '"'; i += 2; continue;   // escaped "" → literal "
+          } else {
+            inQ = false;  // end of quoted field
+          }
+        } else {
+          cur += ch;
+        }
+      } else {
+        if (ch === '"') { inQ = true; }
+        else if (ch === ',') { fields.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      i++;
     }
     fields.push(cur.trim());
-    return fields.map(f => f.replace(/^"|"$/g,'').trim());
+    return fields.map(f => f.replace(/^"|"$/g, '').trim());
   }
   const first = splitLine(lines[0]);
-  const looksHeader = first[0] && first[0].length < 30 &&
+  const looksHeader = first[0] && first[0].length < 40 &&
     /^(title|post|content|body|text|a)$/i.test(first[0].replace(/\s+/g,''));
   const data = looksHeader ? lines.slice(1) : lines;
   return data.map(line => {
     const f = splitLine(line);
     return { title:f[0]||'', content:f[1]||'', imageurl:f[2]||'', linkurl:f[3]||'', active:f[4]||'' };
-  }).filter(r => r.active.toLowerCase()==='yes');
+  }).filter(r => r.active.toLowerCase() === 'yes');
 }
 // ── 4 animated emoji icons — randomly selected per slide ──
 // Returns an SVG string for each icon type
@@ -1867,7 +1991,7 @@ function renderSlides() {
     const isIfrC = decoded.trim().toLowerCase().startsWith('<iframe');
     const isFBC  = decoded.includes('fb-post') || decoded.includes('fb-video') ||
                    (decoded.includes('data-href') && decoded.includes('facebook.com'));
-    const isYTC  = isYouTube(decoded) || /youtu\.be/.test(decoded);
+    const isYTC  = isYouTube(decoded) || /youtu\.be/.test(decoded) || isGoogleSlidesURL(decoded);
 
     // Auto-detect image: column C URL, OR content that IS just an image URL
     const imgExtRE = /\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i;
@@ -2072,6 +2196,7 @@ function goToSlide(idx) {
   }
   currentSlide=idx;
   if (allS[idx]) allS[idx].classList.add('active');
+  maybeBurstTitle(idx);
   if (allD[idx]) allD[idx].classList.add('active');
   if (window.updateQRForSlide&&slides[idx]) updateQRForSlide(slides[idx]);
   requestAnimationFrame(applyDynamicText);
@@ -2079,10 +2204,21 @@ function goToSlide(idx) {
   const s=slides[idx];
   if (s&&isVideoContent(s.content||'')) {
     const rawContent=(s.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
-    const m=rawContent.match(/src=["']([^"']+)["']/i);
-    const bare=rawContent.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^\s]*)/);
-    const ytSrc=m?m[1]:(bare?`https://www.youtube.com/embed/${bare[2]}`:null);
+    // Match src= with or without quotes (CSV parser may strip quotes)
+    const m=rawContent.match(/src=["']?([^"'\s>]+youtube[^"'\s>]*)["']?/i);
+    const bareYT=rawContent.match(/(https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([\w-]+)[^\s]*)/);
+    const ytSrc=m?m[1]:( bareYT?bareYT[1]:null);
     if (ytSrc) { _startTimer(VIDEO_MS); showYouTube(ytSrc,()=>goToSlide((currentSlide+1)%slides.length)); return; }
+  }
+  // Google Slides bare URL or iframe
+  if (s && isGoogleSlidesURL(rawContent)) {
+    const gsM = rawContent.match(/src=["']?([^"'\s>]+presentation[^"'\s>]*)["']?/i);
+    const gsSrc = gsM ? gsM[1].replace(/&amp;/g,'&') : rawContent.trim();
+    if (gsSrc && isGoogleSlidesURL(gsSrc)) {
+      _startTimer(SLIDES_MS);
+      showGoogleSlides(gsSrc, ()=>goToSlide((currentSlide+1)%slides.length));
+      return;
+    }
   }
   hideYouTube();
   _startTimer(_durationFor(idx));
@@ -2178,26 +2314,37 @@ function getOrCreateYTBox() {
 function showYouTube(rawSrc, onDone) {
   _ytDoneCallback = onDone;
 
-  // Decode HTML entities in the raw src (Google Sheets may encode & as &amp;)
+  // Full entity decode
   let src = rawSrc
     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
     .replace(/&quot;/g,'"');
 
-  // Extract src from iframe tag if full tag was passed
-  const srcMatch = src.match(/src=["']([^"']+)["']/i);
+  // Extract src from full iframe tag (handles both quoted and unquoted src attributes)
+  const srcMatch = src.match(/src=["']?([^"'\s>]+)["']?/i);
   if (srcMatch) src = srcMatch[1].replace(/&amp;/g,'&');
 
-  // Normalize to embed URL
-  src = src
-    .replace(/watch\?v=/, 'embed/')
-    .replace(/youtu\.be\//, 'www.youtube.com/embed/')
-    .replace(/youtube-nocookie\.com\/embed\//, 'youtube-nocookie.com/embed/');
+  // Capture timestamp before normalizing
+  const tsMatch = src.match(/[?&]t=(\d+)/);
+  const startSec = tsMatch ? tsMatch[1] : null;
+  src = src.replace(/[?&]t=\d+/g, '');
 
-  // Remove existing autoplay/mute params, add fresh ones
-  src = src.replace(/[?&]autoplay=\d/g,'').replace(/[?&]mute=\d/g,'');
-  const sep = src.includes('?') ? '&' : '?';
-  // mute=1 required for autoplay in most browsers (user can unmute)
-  src += sep + 'autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1';
+  // Normalize all YouTube URL formats → embed URL using youtube-nocookie.com
+  src = src
+    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/watch\?v=/, 'www.youtube-nocookie.com/embed/')
+    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/live\//, 'www.youtube-nocookie.com/embed/')
+    .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/shorts\//, 'www.youtube-nocookie.com/embed/')
+    .replace(/(?:www\.)?youtu\.be\//, 'www.youtube-nocookie.com/embed/');
+
+  // Ensure it's in /embed/ format
+  if (!src.includes('/embed/')) {
+    src = 'https://www.youtube-nocookie.com/embed/' + src.split('/').pop();
+  }
+
+  // Strip extra query params that conflict with embed; start with a clean set
+  const vidMatch = src.match(/\/embed\/([\w-]+)/);
+  const videoId = vidMatch ? vidMatch[1] : '';
+  src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1`;
+  if (startSec) src += `&start=${startSec}`;
 
   const box = getOrCreateYTBox();
   box.innerHTML = `<iframe
@@ -2208,7 +2355,6 @@ function showYouTube(rawSrc, onDone) {
     referrerpolicy="strict-origin-when-cross-origin">
   </iframe>`;
   box.classList.add('active');
-
   _startCountdown(240000);
   _setProgressBar(240000);
   if (_ytTimer) clearTimeout(_ytTimer);
@@ -2285,6 +2431,91 @@ function reprocessFBEmbeds() {
   if (window.FB && window.FB.XFBML) { try { FB.XFBML.parse(); } catch(e) {} }
 }
 
+
+// ── TITLE PARTICLE BURST ─────────────────────────────────────
+// Fires when a slide with a title first becomes active
+let _lastBurstSlide = -1;
+function maybeBurstTitle(slideIdx) {
+  if (slideIdx === _lastBurstSlide) return;
+  const slide = document.querySelectorAll('.slide')[slideIdx];
+  if (!slide) return;
+  const title = slide.querySelector('.post-title');
+  if (!title) return;
+  _lastBurstSlide = slideIdx;
+  const rect = title.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+  const isKDS = document.title.includes('KDS') || !!document.querySelector('#bgCanvas');
+  for (let i = 0; i < 28; i++) {
+    setTimeout(() => {
+      const el = document.createElement('span');
+      el.style.cssText = `
+        position:fixed; pointer-events:none; z-index:300;
+        left:${cx + (Math.random()-0.5)*rect.width*0.9}px;
+        top:${cy + (Math.random()-0.5)*rect.height*0.6}px;
+        width:${isKDS?6:9}px; height:${isKDS?6:14}px;
+        border-radius:${isKDS?'50%':'50% 50% 35% 35%'};
+        background:${isKDS
+          ? 'radial-gradient(circle,#fff8c0 0%,#f5c842 60%,transparent 100%)'
+          : 'radial-gradient(circle at 50% 80%,#ff5500 0%,#ffcc00 50%,transparent 100%)'};
+        animation:titleBurst 1.1s ease-out forwards;
+        --tx:${(Math.random()-0.5)*120}px;
+        --ty:${-(30+Math.random()*80)}px;
+      `;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(), 1100);
+    }, i * 28);
+  }
+}
+
+// ══ GOOGLE SLIDES FULLSCREEN ENGINE ═══════════════════════
+// Detects bare presentation URLs or iframe embeds,
+// converts to autoplay embed, shows fullscreen for 4 minutes
+const SLIDES_MS = 4 * 60 * 1000;  // 4 minutes
+
+function isGoogleSlidesURL(str) {
+  return /docs\.google\.com\/presentation|slides\.google\.com/.test(str);
+}
+
+function showGoogleSlides(rawSrc, onDone) {
+  _ytDoneCallback = onDone;
+
+  let src = rawSrc
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"');
+
+  // Extract src from iframe if needed
+  const srcM = src.match(/src=["']?([^"'\s>]+presentation[^"'\s>]*)["']?/i);
+  if (srcM) src = srcM[1].replace(/&amp;/g,'&');
+
+  // Convert /pub?... to /embed?... with autoplay
+  src = src
+    .replace(/\/pub(\?|$)/, '/embed$1')
+    .replace(/\/embed$/, '/embed?');
+
+  // Strip conflicting params, inject autoplay
+  src = src.replace(/[?&](start|loop|delayms)=[^&]*/g, '');
+  const sep = src.includes('?') && !src.endsWith('?') ? '&' : '';
+  src += sep + (src.endsWith('?') ? '' : '&') + 'start=true&loop=true&delayms=5000&rm=minimal';
+  src = src.replace(/&&+/g,'&').replace(/\?&/,'?');
+
+  const box = getOrCreateYTBox();
+  box.innerHTML = `<iframe
+    src="${src}"
+    style="width:100%;height:100%;border:none;"
+    allowfullscreen
+    allow="autoplay; fullscreen"
+    referrerpolicy="strict-origin-when-cross-origin">
+  </iframe>`;
+  box.classList.add('active');
+  _startCountdown(SLIDES_MS);
+  _setProgressBar(SLIDES_MS);
+  if (_ytTimer) clearTimeout(_ytTimer);
+  _ytTimer = setTimeout(() => {
+    hideYouTube();
+    if (_ytDoneCallback) { _ytDoneCallback(); _ytDoneCallback = null; }
+  }, SLIDES_MS);
+}
 async function init(){
   await loadSlides();renderSlides();startProgressBar();
   if(window.updateQRForSlide && slides[0]) updateQRForSlide(slides[0]);
