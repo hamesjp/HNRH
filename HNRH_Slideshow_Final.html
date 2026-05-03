@@ -681,6 +681,132 @@
   #slide-container { left: 226px !important; }
   #progress-bar    { left: 226px !important; }
 
+
+  /* ══ EMBED SLIDES — transparent, full area ══ */
+  .slide.has-embed-slide .announce-card,
+  .announce-card.has-embed {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    width: 100%;
+    height: 100%;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .slide.has-embed-slide {
+    padding: 0 !important;
+  }
+  /* FB widget gets full width */
+  .slide-embed { width:100%; display:flex; justify-content:center; align-items:flex-start; }
+  .slide-embed .fb-post, .slide-embed .fb-video { max-width:600px !important; }
+  .slide-embed iframe {
+    border: none; border-radius: 12px;
+    max-width: 100%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+
+  /* ══ SCHEDULE PANEL — TV-readable, large fonts ══ */
+  .schedule-panel {
+    position: fixed;
+    left: 8px; top: 88px; bottom: 68px;
+    width: 218px;
+    z-index: 50;
+    display: flex; flex-direction: column;
+    background: rgba(6,20,34,0.88);
+    backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(160,210,200,0.22);
+    border-radius: 16px;
+    padding: 12px 10px 10px;
+    font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    animation: schDrift 22s ease-in-out infinite;
+  }
+  @keyframes schDrift {
+    0%,100%{ transform:translateY(0); opacity:0.95; }
+    45%    { transform:translateY(-2px); opacity:0.98; }
+    75%    { transform:translateY(1px); opacity:0.93; }
+  }
+  .sch-title {
+    font-size: 14px; font-weight: 900; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--accent2, #f0d090);
+    text-align: center; padding-bottom: 8px;
+    border-bottom: 1.5px solid rgba(255,255,255,0.14);
+    margin-bottom: 8px;
+    font-family: 'Fredoka One', 'Montserrat', cursive;
+  }
+  .sch-list {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: space-evenly;
+    gap: 3px; overflow: hidden;
+  }
+  .sch-item {
+    display: flex; flex-direction: column;
+    padding: 7px 9px; border-radius: 9px;
+    border-left: 3.5px solid rgba(160,210,200,0.20);
+    transition: all 0.5s ease;
+  }
+  .sch-item.active {
+    background: rgba(160,210,200,0.20) !important;
+    border-left-color: var(--accent, #a0d4c8) !important;
+    animation: schActive 2.5s ease-in-out infinite;
+  }
+  .sch-item.past { opacity: 0.28; }
+  @keyframes schActive {
+    0%,100%{ background:rgba(160,210,200,0.17); }
+    50%    { background:rgba(160,210,200,0.28); }
+  }
+  .sch-time {
+    font-size: 11.5px; font-weight: 700;
+    color: rgba(185,225,218,0.62);
+    line-height: 1.2; letter-spacing: 0.1px;
+  }
+  .sch-label {
+    font-size: 15px; font-weight: 900;
+    color: rgba(235,252,248,0.98);
+    line-height: 1.2; margin-top: 1px;
+  }
+  .sch-sub {
+    font-size: 11px; font-weight: 600;
+    color: rgba(185,218,214,0.58);
+    line-height: 1.3; margin-top: 1px;
+  }
+  /* Slide + progress adjust for 218px schedule */
+  #slide-container { left: 234px !important; }
+  #progress-bar    { left: 234px !important; }
+
+
+  /* ══ HNRH FLAMES — fire shimmer title ══ */
+  .themed-title {
+    position: relative;
+    color: transparent !important;
+    background: linear-gradient(
+      90deg,
+      #8b0000 0%, #cc2200 10%, #ff6600 20%,
+      #ffcc00 30%, #ffffff 40%,
+      #ffcc00 50%, #ff6600 60%,
+      #cc2200 70%, #8b0000 80%,
+      #ff6600 90%, #ffcc00 100%
+    );
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: flameShimmer 2.2s linear infinite;
+    text-shadow: none !important;
+    filter: drop-shadow(0 0 10px rgba(255,80,0,0.60));
+  }
+  @keyframes flameShimmer {
+    0%   { background-position: 0% center;   filter: drop-shadow(0 0 8px rgba(255,80,0,0.5)); }
+    33%  { background-position: 100% center;  filter: drop-shadow(0 0 18px rgba(255,150,0,0.85)); }
+    66%  { background-position: 200% center;  filter: drop-shadow(0 0 12px rgba(255,50,0,0.7)); }
+    100% { background-position: 300% center;  filter: drop-shadow(0 0 8px rgba(255,80,0,0.5)); }
+  }
+
 </style>
 </head>
 <body>
@@ -1390,22 +1516,44 @@ function renderSlides() {
   slides.forEach((s, i) => {
     const div = document.createElement('div');
     div.className = 'slide' + (i===0?' active':'');
-    const title    = s.title    || '';
-    const content  = s.content  || '';
-    const imageurl = s.imageurl || '';
-    const hasImage = /^https?:\/\//i.test(imageurl);
-    const hasTitle = title.trim().length > 0;
-    const decoded  = content.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
-    const isIfrC   = decoded.trim().toLowerCase().startsWith('<iframe');
-    const isFBC    = decoded.includes('fb-post')||decoded.includes('fb-video')||
-                     (decoded.includes('data-href')&&decoded.includes('facebook.com'));
-    const isYTC    = isYouTube(decoded)||/youtu\.?be/.test(decoded);
+
+    const title      = s.title    || '';
+    const content    = s.content  || '';
+    const imageurl   = (s.imageurl || '').trim();
+    const hasTitle   = title.trim().length > 0;
+
+    // Decode content for type detection
+    const decoded = content
+      .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"');
+
+    const isIfrC = decoded.trim().toLowerCase().startsWith('<iframe');
+    const isFBC  = decoded.includes('fb-post') || decoded.includes('fb-video') ||
+                   (decoded.includes('data-href') && decoded.includes('facebook.com'));
+    const isYTC  = isYouTube(decoded) || /youtu\.be/.test(decoded);
+
+    // Auto-detect image: column C URL, OR content that IS just an image URL
+    const imgExtRE = /\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i;
+    let effectiveImageURL = '';
+    if (imageurl && /^https?:\/\//i.test(imageurl)) {
+      effectiveImageURL = imageurl;
+    } else if (!isIfrC && !isFBC && !isYTC && /^https?:\/\//i.test(decoded.trim()) && imgExtRE.test(decoded.trim())) {
+      // Content IS an image URL - treat it as an image
+      effectiveImageURL = decoded.trim();
+    }
+    const hasImage = effectiveImageURL.length > 0;
+
     const hasEmbed = (isIfrC && !isYTC) || isFBC;
-    const cardClasses = ['announce-card',hasImage?'has-image':'',hasEmbed?'has-embed':'',
-                          !hasImage&&!hasEmbed?'has-text':''].filter(Boolean).join(' ');
+
+    const cardClasses = ['announce-card',
+      hasImage  ? 'has-image'  : '',
+      hasEmbed  ? 'has-embed'  : '',
+      !hasImage && !hasEmbed ? 'has-text' : ''
+    ].filter(Boolean).join(' ');
+
     const iconType = iconForSlide(i);
     const iconSVG  = getAnimIcon(iconType);
 
+    // Title row with themed animated text + flanking icons
     let titleHTML = '';
     if (hasTitle) {
       titleHTML = `<div class="post-title-row">
@@ -1415,30 +1563,37 @@ function renderSlides() {
       </div>`;
     }
 
+    // Image
     let imgHTML = hasImage
-      ? `<img class="slide-image" src="${imageurl}" alt=""
-           onload="fitSlideImage(this)" onerror="this.style.display='none'">`
+      ? `<img class="slide-image" src="${effectiveImageURL}" alt=""
+           onload="fitSlideImage(this)"
+           onerror="this.src='';this.style.display='none';">`
       : '';
 
+    // Body content
     let bodyHTML = '';
     if (isYTC) {
-      bodyHTML = renderBodyContent(content);
-    } else if (hasImage) {
+      bodyHTML = '<div class="slide-embed" style="color:rgba(200,230,225,0.55);font-size:16px;padding:24px;text-align:center;">▶ Loading video…</div>';
+    } else if (hasImage && effectiveImageURL !== decoded.trim()) {
+      // Image from col C: show content as caption
       bodyHTML = content ? `<p class="slide-body image-caption">${content}</p>` : '';
+    } else if (hasImage) {
+      // Image WAS the content (auto-detected) — no body text
+      bodyHTML = '';
     } else {
       bodyHTML = renderBodyContent(content);
     }
 
-    let innerContent = '';
-    if (hasTitle) {
-      innerContent = titleHTML + imgHTML + bodyHTML;
-    } else {
-      innerContent = `<div class="content-with-icons">
-        <span class="side-icon left-icon">${iconSVG}</span>
-        <div class="content-center">${imgHTML}${bodyHTML}</div>
-        <span class="side-icon right-icon">${iconSVG}</span>
-      </div>`;
-    }
+    // Embed slides: add has-embed-slide class to the slide wrapper
+    if (hasEmbed) div.classList.add('has-embed-slide');
+
+    let innerContent = hasTitle
+      ? titleHTML + imgHTML + bodyHTML
+      : `<div class="content-with-icons">
+           <span class="side-icon left-icon">${iconSVG}</span>
+           <div class="content-center">${imgHTML}${bodyHTML}</div>
+           <span class="side-icon right-icon">${iconSVG}</span>
+         </div>`;
 
     div.innerHTML = `<div class="${cardClasses}">${innerContent}</div>`;
     c.appendChild(div);
@@ -1450,18 +1605,18 @@ function renderSlides() {
   });
 
   requestAnimationFrame(applyDynamicText);
-  // Activate bare YouTube iframes
+
+  // Activate bare YouTube iframes in slide cards
   document.querySelectorAll('.yt-bare').forEach(el => {
     const vid = el.dataset.ytid;
-    if (vid) {
-      el.innerHTML = '';
-      const frame = document.createElement('iframe');
-      frame.src = `https://www.youtube.com/embed/${vid}?autoplay=0`;
-      frame.setAttribute('allowfullscreen','');
-      frame.setAttribute('allow','autoplay; fullscreen');
-      frame.style.cssText = 'width:100%;height:360px;border:none;border-radius:10px;';
-      el.appendChild(frame);
-    }
+    if (!vid) return;
+    el.innerHTML = '';
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=0&rel=0`;
+    frame.setAttribute('allowfullscreen','');
+    frame.setAttribute('allow','autoplay; fullscreen');
+    frame.style.cssText = 'width:100%;height:360px;border:none;border-radius:10px;';
+    el.appendChild(frame);
   });
 }
 // ── Dynamic font sizing ─────────────────────────────────────
@@ -1585,8 +1740,9 @@ function goToSlide(idx) {
   setTimeout(reprocessFBEmbeds,450);
   const s=slides[idx];
   if (s&&isVideoContent(s.content||'')) {
-    const m=(s.content||'').match(/src=["']([^"']+)["']/i);
-    const bare=(s.content||'').match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^\s]*)/);
+    const rawContent=(s.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    const m=rawContent.match(/src=["']([^"']+)["']/i);
+    const bare=rawContent.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^\s]*)/);
     const ytSrc=m?m[1]:(bare?`https://www.youtube.com/embed/${bare[2]}`:null);
     if (ytSrc) { _startTimer(VIDEO_MS); showYouTube(ytSrc,()=>goToSlide((currentSlide+1)%slides.length)); return; }
   }
@@ -1797,37 +1953,45 @@ function getOrCreateYTBox() {
 function showYouTube(rawSrc, onDone) {
   _ytDoneCallback = onDone;
 
-  // Extract src from full iframe tag if needed
-  let src = rawSrc;
-  const srcMatch = rawSrc.match(/src=["']([^"']+)["']/i);
-  if (srcMatch) src = srcMatch[1];
+  // Decode HTML entities in the raw src (Google Sheets may encode & as &amp;)
+  let src = rawSrc
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"');
 
-  // Normalize YouTube URL to embed format
-  src = src.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/');
-  // Strip existing autoplay, add fresh params
-  src = src.replace(/[?&]autoplay=\d/g, '');
-  if (!src.includes('/embed/')) {
-    // Fallback: just use as-is with autoplay
-  }
+  // Extract src from iframe tag if full tag was passed
+  const srcMatch = src.match(/src=["']([^"']+)["']/i);
+  if (srcMatch) src = srcMatch[1].replace(/&amp;/g,'&');
+
+  // Normalize to embed URL
+  src = src
+    .replace(/watch\?v=/, 'embed/')
+    .replace(/youtu\.be\//, 'www.youtube.com/embed/')
+    .replace(/youtube-nocookie\.com\/embed\//, 'youtube-nocookie.com/embed/');
+
+  // Remove existing autoplay/mute params, add fresh ones
+  src = src.replace(/[?&]autoplay=\d/g,'').replace(/[?&]mute=\d/g,'');
   const sep = src.includes('?') ? '&' : '?';
-  src += sep + 'autoplay=1&mute=0&rel=0&modestbranding=1&enablejsapi=1';
+  // mute=1 required for autoplay in most browsers (user can unmute)
+  src += sep + 'autoplay=1&mute=1&rel=0&modestbranding=1&enablejsapi=1&playsinline=1';
 
   const box = getOrCreateYTBox();
-  box.innerHTML = `<iframe src="${src}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  box.innerHTML = `<iframe
+    src="${src}"
+    style="width:100%;height:100%;border:none;"
+    allowfullscreen
+    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+    referrerpolicy="strict-origin-when-cross-origin">
+  </iframe>`;
   box.classList.add('active');
 
-  // Start 240-second countdown in skip button
   _startCountdown(240000);
   _setProgressBar(240000);
-
-  // Auto-advance after 240 seconds
   if (_ytTimer) clearTimeout(_ytTimer);
   _ytTimer = setTimeout(() => {
     hideYouTube();
     if (_ytDoneCallback) { _ytDoneCallback(); _ytDoneCallback = null; }
   }, 240000);
 }
-
 function hideYouTube() {
   if (_ytTimer) { clearTimeout(_ytTimer); _ytTimer = null; }
   const box = document.getElementById('yt-expand');
