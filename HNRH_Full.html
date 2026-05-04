@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HNRH Announcements</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Montserrat:wght@700;900&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --bg:       #0e1e14;
+    --hdr-bg:   rgba(12,30,20,0.94);
+    --hdr-bdr:  rgba(180,220,160,0.35);
+    --accent:   #c8e8a0;
+    --accent2:  #f0d890;
+    --card-bg:  rgba(10,28,18,0.80);
+    --card-bdr: rgba(180,220,160,0.18);
+    --text:     #e4f0e0;
+    --muted:    rgba(200,230,190,0.65);
+  }
+
+  body { width:100vw; height:100vh; overflow:hidden; font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); }
+  #oceanCanvas { position:fixed; inset:0; width:100%; height:100%; z-index:0; }
+
+  /* ── HEADER ── */
+  #header {
+    position:fixed; top:0; left:0; right:0; height:80px;
+    background:var(--hdr-bg); backdrop-filter:blur(14px);
+    border-bottom:1.5px solid var(--hdr-bdr);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 32px; z-index:100; box-shadow:0 2px 18px rgba(0,0,0,0.35);
+  }
+  #header-left { display:flex; align-items:center; gap:16px; }
+  #school-logo { width:52px; height:52px; background:var(--accent2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Montserrat',sans-serif; font-weight:900; font-size:13px; color:#2a1e04; flex-shrink:0; text-align:center; line-height:1.15; }
+  #school-name { font-family:'Montserrat',sans-serif; font-weight:700; font-size:18px; color:var(--text); line-height:1.2; }
+  #school-name span { display:block; font-family:'Nunito',sans-serif; font-size:11px; font-weight:400; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  #header-center { display:flex; flex-direction:column; align-items:center; }
+  #clock { font-family:'Montserrat',sans-serif; font-weight:900; font-size:36px; color:var(--accent2); letter-spacing:2px; line-height:1; }
+  #date-display { font-size:13px; color:var(--muted); margin-top:2px; }
+  #weather-widget { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(180,220,160,0.16); border-radius:14px; padding:8px 16px; min-width:200px; }
+  #weather-icon { font-size:30px; }
+  #weather-temp { font-family:'Montserrat',sans-serif; font-weight:700; font-size:22px; color:var(--text); line-height:1; }
+  #weather-desc { font-size:12px; color:var(--muted); margin-top:2px; }
+  #weather-location { font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px; }
+
+  /* ── SLIDES ── */
+  #slide-container { position:fixed; top:80px; left:0; right:0; bottom:60px; z-index:10; display:flex; align-items:center; justify-content:center; padding:28px 44px; }
+  .slide { position:absolute; inset:28px 44px; display:flex; align-items:center; justify-content:center; opacity:0; transform:translateY(14px) scale(0.97); transition:opacity 0.7s ease,transform 0.7s ease; pointer-events:none; }
+  .slide.active { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+  .slide.exit   { opacity:0; transform:translateY(-14px) scale(0.97); }
+  .announce-card { background:var(--card-bg); backdrop-filter:blur(22px); border:1px solid var(--card-bdr); border-radius:24px; padding:44px 60px; max-width:880px; width:100%; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05); position:relative; overflow:hidden; }
+  .announce-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),var(--accent),transparent); opacity:0.75; }
+  .slide-category { display:inline-block; background:rgba(180,220,160,0.12); border:1px solid rgba(180,220,160,0.28); color:var(--accent); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:5px 16px; border-radius:100px; margin-bottom:18px; }
+  .slide-emoji { font-size:72px; display:block; margin-bottom:14px; animation:float 3.5s ease-in-out infinite; }
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .slide-image { width:100%; max-height:340px; border-radius:14px; margin:0 auto 10px; object-fit:cover; display:block; box-shadow:0 6px 24px rgba(0,0,0,0.3); }
+  .announce-card.has-image .slide-title { font-size:26px !important; margin-bottom:6px; }
+  .slide-title { font-family:'Montserrat',sans-serif; font-weight:900; font-size:40px; color:var(--text); line-height:1.15; margin-bottom:12px; text-shadow:0 2px 10px rgba(0,0,0,0.3); word-break:break-word; }
+  .slide-body { font-size:21px; color:var(--muted); line-height:1.6; font-weight:300; max-width:700px; margin:0 auto; word-break:break-word; }
+  .announce-card.has-embed { background:rgba(248,248,248,0.97) !important; border-color:rgba(200,200,200,0.35) !important; padding:22px 30px !important; }
+  .announce-card.has-embed .slide-title { color:#1a1a2a !important; text-shadow:none; }
+  .announce-card.has-embed .slide-category { background:rgba(0,100,200,0.10); border-color:rgba(0,100,200,0.25); color:#1a4a80; }
+
+  /* ── FOOTER ── */
+  #footer { position:fixed; bottom:0; left:0; right:0; height:60px; background:rgba(10,28,18,0.9); backdrop-filter:blur(8px); border-top:1px solid rgba(180,220,160,0.1); display:flex; align-items:center; justify-content:center; gap:10px; z-index:100; }
+  .dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.2); transition:all 0.4s ease; cursor:pointer; }
+  .dot.active { width:26px; border-radius:4px; background:var(--accent); }
+  #progress-bar { position:fixed; bottom:60px; left:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); z-index:101; transition:width linear; box-shadow:0 0 6px rgba(180,220,160,0.4); }
+
+  #loading-overlay { position:fixed; inset:0; background:rgba(10,20,14,0.97); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:200; transition:opacity 0.8s ease; }
+  #loading-overlay.hidden { opacity:0; pointer-events:none; }
+  .spinner { width:44px; height:44px; border:3px solid rgba(180,220,160,0.2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:14px; }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading-overlay p { color:var(--muted); font-size:14px; letter-spacing:1px; }
+
+  /* ── QR PANEL ── */
+  #qr-panel {
+    position: fixed;
+    right: 18px;
+    top: 96px;
+    bottom: 72px;
+    width: 148px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 14px;
+    z-index: 50;
+    overflow: hidden;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+  }
+  .qr-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    animation: qrSlideIn 0.4s ease both;
+    pointer-events: auto;
+  }
+  @keyframes qrSlideIn {
+    from { opacity:0; transform:translateX(24px) scale(0.92); }
+    to   { opacity:1; transform:translateX(0)    scale(1); }
+  }
+  .qr-box {
+    width: 112px; height: 112px;
+    background: white;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 1.5px rgba(180,220,160,0.25);
+    overflow: hidden;
+  }
+  .qr-box img, .qr-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 4px;
+  }
+  .qr-label {
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    color: rgba(200,230,190,0.70);
+    text-align: center;
+    max-width: 130px;
+    line-height: 1.3;
+    word-break: break-all;
+    background: rgba(10,28,18,0.65);
+    border-radius: 5px;
+    padding: 2px 6px;
+  }
+
+  /* ── EMBED BODY (Facebook / iframe) ── */
+  .slide-embed {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    max-height: 440px;
+    overflow: hidden;
+  }
+  .slide-embed iframe {
+    border: none;
+    border-radius: 12px;
+    max-width: 100%;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .slide-embed .fb-post,
+  .slide-embed .fb-video {
+    max-width: 500px !important;
+  }
+  .announce-card.has-embed {
+    padding: 24px 32px;
+  }
+
+  /* ── Animated slide icons ── */
+  .slide-icon-wrap {
+    display: flex; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .slide-anim-icon {
+    width: 58px; height: 58px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+  }
+  /* Image-first caption */
+  .slide-body.image-caption {
+    font-size: 15px !important;
+    opacity: 0.80;
+    margin-top: 8px;
+    max-height: 3em;
+    overflow: hidden;
+  }
+  /* Text-only slides — slightly larger body */
+  .announce-card.has-text .slide-body {
+    font-size: 22px;
+    line-height: 1.65;
+  }
+
+  /* ── SCHEDULE PANEL ── */
+  .schedule-panel {
+    position: fixed;
+    left: 12px;
+    top: 88px;
+    bottom: 68px;
+    width: 210px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: rgba(8,24,38,0.80);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(160,210,200,0.18);
+    border-radius: 14px;
+    padding: 10px 8px;
+    overflow: hidden;
+    animation: schDrift 18s ease-in-out infinite;
+  }
+  @keyframes schDrift {
+    0%,100% { transform: translateY(0px); opacity:0.92; }
+    33%      { transform: translateY(-3px); opacity:0.96; }
+    66%      { transform: translateY(2px); opacity:0.90; }
+  }
+  .sch-title {
+    font-family: 'Fredoka One', 'Montserrat', cursive;
+    font-size: 13px; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--accent2, #f0d890); text-align: center;
+    padding: 4px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.10);
+    margin-bottom: 6px;
+  }
+  .sch-list { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+  .sch-item {
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 5px 7px; border-radius: 8px;
+    border-left: 3px solid rgba(160,210,200,0.25);
+    transition: background 0.5s ease, border-color 0.5s ease;
+  }
+  .sch-item.active {
+    background: rgba(160,210,200,0.15);
+    border-left-color: var(--accent, #c8e8a0);
+    animation: schPulse 3s ease-in-out infinite;
+  }
+  .sch-item.past { opacity: 0.38; }
+  @keyframes schPulse {
+    0%,100% { background: rgba(160,210,200,0.12); }
+    50%      { background: rgba(160,210,200,0.22); }
+  }
+  .sch-time  { font-size: 10px; color: rgba(200,230,225,0.55); font-weight:600; letter-spacing:0.3px; }
+  .sch-label { font-size: 12px; color: rgba(220,240,235,0.90); font-weight:700; }
+  .sch-sub   { font-size: 9.5px; color: rgba(200,220,218,0.55); line-height: 1.3; }
+
+  /* ── HEADER ANTI-BURN: slow colour shift on border ── */
+  @keyframes hdrBorderShift {
+    0%,100% { border-bottom-color: rgba(160,210,200,0.35); }
+    33%      { border-bottom-color: rgba(180,200,230,0.30); }
+    66%      { border-bottom-color: rgba(200,190,210,0.28); }
+  }
+  #header { animation: hdrBorderShift 22s ease-in-out infinite; }
+
+  /* Subtle clock colour breathe */
+  @keyframes clockBreathe {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.82; }
+  }
+  #clock { animation: clockBreathe 8s ease-in-out infinite; }
+
+  /* Logo slow pulse */
+  @keyframes logoPulse {
+    0%,100% { transform:scale(1); }
+    50%      { transform:scale(1.04); }
+  }
+  #school-logo { animation: logoPulse 12s ease-in-out infinite; }
+
+  /* ── SLIDE CONTAINER: shift right to clear schedule panel ── */
+  #slide-container { left: 196px !important; }
+  #progress-bar    { left: 196px !important; }
+
+  
+
+
+  /* ── CLOCK: 12-hour with AM/PM ── */
+  #header-center { display:flex; flex-direction:column; align-items:center; }
+  #clock-row     { display:flex; align-items:baseline; gap:6px; }
+  #clock         { font-family:'Montserrat',sans-serif; font-weight:900; font-size:40px; color:var(--accent2); letter-spacing:1px; line-height:1; }
+  #clock-ampm    { font-family:'Montserrat',sans-serif; font-weight:700; font-size:16px; color:var(--accent2); opacity:0.80; letter-spacing:1px; }
+  #date-display  { font-size:12px; color:var(--muted); margin-top:1px; text-align:center; }
+
+  /* ── HEADER: font scaling ── */
+  #school-name   { font-family:'Montserrat',sans-serif; font-weight:700; font-size:17px; color:var(--text); line-height:1.2; }
+  #school-name span { font-size:10px; }
+  #school-logo   { width:48px; height:48px; font-size:12px; }
+  #weather-temp  { font-size:20px; }
+  #weather-desc  { font-size:11px; }
+  #weather-location { font-size:9.5px; }
+
+  /* ── SCHEDULE: readable at TV distance ── */
+  .schedule-panel { width:168px; }
+  .sch-title { font-size:11px; }
+  .sch-time  { font-size:9.5px; }
+  .sch-label { font-size:11px; }
+  .sch-sub   { font-size:8.5px; }
+
+  /* ── SLIDES: high readability, room for content ── */
+  .announce-card  { padding:36px 48px; }
+  .slide-title    { font-size:36px; }
+  .slide-body     { font-size:20px; line-height:1.58; }
+  .slide-category { font-size:10px; padding:4px 14px; margin-bottom:14px; }
+
+  /* ── SLIDE CONTAINER: account for 168px schedule panel ── */
+  #slide-container { left:188px !important; }
+  #progress-bar    { left:188px !important; }
+
+
+  
+
+
+  /* ══════════════════════════════════════════════════════
+     LAYOUT GUARANTEES
+     - Header always on top (z-index:100)
+     - Footer always on top (z-index:100)  
+     - NOTHING covers header or footer
+     - Skip button lives in footer permanently
+     - YouTube expands slide-container only (between header & footer)
+  ══════════════════════════════════════════════════════ */
+
+  /* Header and footer are sacred – always topmost visible layers */
+  #header  { z-index: 200 !important; }
+  #footer  { z-index: 200 !important; position: fixed !important; }
+  #progress-bar { z-index: 199 !important; }
+
+  /* Video container – expands between header and footer ONLY */
+  #yt-expand {
+    display: none;
+    position: fixed;
+    top: 82px;          /* just below header */
+    left: 0; right: 0;
+    bottom: 62px;       /* just above footer */
+    z-index: 150;       /* above slides, BELOW header and footer */
+    background: #000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #yt-expand.active { display: flex; }
+  #yt-expand iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* Remove old video-overlay entirely */
+  #video-overlay { display: none !important; }
+
+  /* Facebook embed – render fully inside slide card */
+  .slide-embed {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 120px;
+    overflow: visible;        /* don't clip fb widget */
+  }
+  .slide-embed iframe {
+    border: none;
+    border-radius: 10px;
+    max-width: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .slide-embed .fb-post,
+  .slide-embed .fb-video {
+    max-width: 500px !important;
+  }
+  /* FB embed card: white bg so widget text is always readable */
+  .announce-card.has-embed {
+    background: rgba(250,250,250,0.98) !important;
+    border-color: rgba(0,0,0,0.10) !important;
+    padding: 24px 28px !important;
+  }
+  .announce-card.has-embed .slide-title  { color: #111 !important; text-shadow: none; }
+
+  /* Skip button always in footer – never covered */
+  #skip-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.10);
+    border: 1.5px solid rgba(255,255,255,0.22);
+    border-radius: 8px;
+    padding: 5px 13px 5px 10px;
+    color: rgba(255,255,255,0.82);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    z-index: 201;           /* above everything including header */
+    transition: background 0.2s, border-color 0.2s;
+    pointer-events: auto;
+  }
+  #skip-btn:hover { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.50); color: #fff; }
+  #skip-btn:active { transform: translateY(-50%) scale(0.95); }
+  #skip-countdown {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.35);
+    font-size: 11px; font-weight: 800;
+    color: rgba(255,255,255,0.92);
+    font-variant-numeric: tabular-nums;
+    background: conic-gradient(rgba(255,255,255,0.50) 0%, rgba(255,255,255,0.08) 0%);
+    flex-shrink: 0;
+  }
+
+
+  /* ── RICH TEXT BODY STYLES ── */
+  /* Cards can expand vertically for long text; slide centres them */
+  .announce-card.has-text {
+    padding: 28px 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Long text left-aligns naturally; short text stays centred */
+  .slide-body {
+    text-align: left;
+    width: 100%;
+    max-width: 820px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  /* Very short body (≥36px) — centre it, it looks better */
+  .slide-body.short-text {
+    text-align: center;
+  }
+  /* Links inside body */
+  .slide-body a {
+    color: var(--accent);
+    text-decoration: underline;
+    word-break: break-all;
+  }
+  /* Line-height breathing for multi-line posts */
+  .slide-body br + br { display: block; margin: 0.4em 0; content: ""; }
+
+
+  /* ── TRANSPARENCY: 88% solid ── */
+  .announce-card          { background: rgba(18,40,58,0.88) !important; }
+  .announce-card.has-embed{ background: rgba(248,248,248,0.88) !important; }
+
+  /* ── POST TITLE ROW ── */
+  .post-title-row {
+    display:flex; align-items:center; justify-content:center;
+    gap:12px; margin-bottom:14px; width:100%;
+    flex-wrap: nowrap;
+  }
+  .post-title {
+    font-size:38px; font-weight:900; line-height:1.1;
+    margin:0; text-align:center; flex:1; max-width:680px;
+  }
+  .title-icon { flex-shrink:0; display:flex; align-items:center; }
+  .title-icon .slide-anim-icon { width:42px; height:42px; }
+
+  /* Content with flanking icons (no title) */
+  .content-with-icons { display:flex; align-items:center; gap:10px; width:100%; }
+  .side-icon { flex-shrink:0; display:flex; align-items:center; opacity:0.65; }
+  .side-icon .slide-anim-icon { width:34px; height:34px; }
+  .content-center { flex:1; min-width:0; }
+
+  /* Slide container leaves room for QR on right */
+  #slide-container { right: 175px !important; }
+  #progress-bar    { right: 175px !important; }
+
+  /* ── QR PANEL ── */
+  #qr-panel {
+    position:fixed; right:8px; top:90px; bottom:70px; width:158px;
+    display:flex; flex-direction:column; justify-content:space-around;
+    align-items:center; gap:8px; z-index:50;
+    pointer-events:none; transition:opacity 0.4s ease;
+  }
+  .qr-item { display:flex; flex-direction:column; align-items:center; gap:4px;
+              animation:qrIn 0.4s ease; }
+  @keyframes qrIn { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:none} }
+  .qr-box { width:108px; height:108px; background:#fff; border-radius:10px; padding:5px;
+             box-shadow:0 4px 14px rgba(0,0,0,0.35); overflow:hidden; }
+  .qr-box img,.qr-box canvas { width:100%!important; height:100%!important; border-radius:3px; }
+  .qr-label { font-size:9.5px; color:rgba(200,228,218,0.70); text-align:center;
+               max-width:140px; word-break:break-all; background:rgba(10,28,40,0.65);
+               border-radius:4px; padding:2px 5px; }
+  .qr-flame .qr-box {
+    animation:flameBorder 2s ease-in-out infinite;
+  }
+  @keyframes flameBorder {
+    0%,100%{ box-shadow:0 0 0 2px #f5a623,0 0 12px #e84a10,0 4px 14px rgba(0,0,0,0.3); }
+    50%    { box-shadow:0 0 0 3px #ffcc00,0 0 20px #ff6600,0 4px 14px rgba(0,0,0,0.3); }
+  }
+
+  /* ── PAUSE BUTTON ── */
+  #pause-btn {
+    position:absolute; right:80px; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; background:rgba(255,255,255,0.10);
+    border:1.5px solid rgba(255,255,255,0.22); border-radius:8px;
+    color:rgba(255,255,255,0.82); font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; z-index:201;
+    transition:background 0.2s,border-color 0.2s;
+  }
+  #pause-btn:hover { background:rgba(255,255,255,0.20); color:#fff; }
+  #pause-btn.paused { background:rgba(255,80,80,0.20); border-color:rgba(255,80,80,0.50); color:#ffaaaa; }
+
+  /* ── CLOCK DIGIT PARTICLES ── */
+  .clock-particle { position:fixed; pointer-events:none; z-index:300; }
+
+  /* ── SLIDE BODY: rich text ── */
+  .slide-body { text-align:left; width:100%; max-width:820px;
+                overflow-wrap:break-word; word-break:break-word; }
+  .slide-body.short-text { text-align:center; }
+  .slide-body a { color:var(--accent); text-decoration:underline; word-break:break-all; }
+  .announce-card.has-embed .slide-title { color:#111 !important; text-shadow:none; }
+
+  /* HNRH: flame title shimmer */
+  .themed-title {
+    background:linear-gradient(90deg, var(--text) 0%, #ffcc00 20%, #ff8800 40%, var(--text) 60%, #ffcc00 80%, var(--text) 100%);
+    background-size:200% auto;
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    animation:flameTitle 2.8s linear infinite; text-shadow:none;
+  }
+  @keyframes flameTitle { 0%{background-position:0% center} 100%{background-position:200% center} }
+  @keyframes clockParticle {
+    0%  { opacity:1; transform:scaleX(0.8) translateY(0); }
+    60% { opacity:0.8; transform:scaleX(1) translateY(-20px); }
+    100%{ opacity:0; transform:scaleX(0.5) translateY(-44px); }
+  }
+  .flame-effect #clock { text-shadow:0 0 10px #ff6600, 0 0 20px #ff3300; }
+  .sch-item.also-active { border-left-color:#f5c842 !important; background:rgba(245,200,66,0.12) !important; }
+  .sch-item[data-jr="true"], .sch-item[data-sr="true"] { padding-left:18px; }
+
+
+  /* ══ QR PANEL — 3-zone fixed layout ══ */
+  #qr-panel {
+    position: fixed;
+    right: 10px;
+    top: 88px;
+    bottom: 68px;          /* clear footer */
+    width: 144px;
+    z-index: 60;           /* above slides, below header */
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  /* Top zone: content QRs */
+  #qr-content-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding-top: 6px;
+    overflow: hidden;
+    width: 100%;
+  }
+  /* Bottom zone: link QR — fixed at bottom of panel, above footer */
+  #qr-link-zone {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 4px;
+    min-height: 140px;
+    flex-shrink: 0;
+  }
+  .qr-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    animation: qrIn 0.35s ease;
+    opacity: 0; /* set by JS after build */
+  }
+  .qr-item.visible { opacity: 1; }
+  @keyframes qrIn { from{opacity:0;transform:translateX(18px)} to{opacity:1;transform:none} }
+  .qr-box {
+    width: 112px; height: 112px;
+    background: #fff; border-radius: 10px; padding: 5px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.40);
+    overflow: hidden;
+  }
+  .qr-box img, .qr-box canvas { width:100%!important; height:100%!important; border-radius:3px; }
+  .qr-label {
+    font-size: 9px; color: rgba(200,228,218,0.72); text-align: center;
+    max-width: 136px; word-break: break-all;
+    background: rgba(10,26,38,0.70); border-radius: 4px; padding: 2px 5px;
+  }
+  /* Flame-outlined link QR */
+  .qr-flame .qr-box {
+    animation: flameBorder 1.8s ease-in-out infinite;
+  }
+  .qr-flame .qr-label { color: #f5c842; }
+  @keyframes flameBorder {
+    0%,100%{ box-shadow:0 0 0 2.5px #f5a623, 0 0 14px #e84a10, 0 4px 16px rgba(0,0,0,0.35); }
+    50%    { box-shadow:0 0 0 3.5px #ffdd00, 0 0 24px #ff5500, 0 4px 16px rgba(0,0,0,0.35); }
+  }
+
+
+  /* Facebook embed — let it breathe */
+  .slide-embed {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: visible;
+    min-height: 80px;
+  }
+  .announce-card.has-embed {
+    background: rgba(248,248,250,0.96) !important;
+    border-color: rgba(200,200,200,0.30) !important;
+    padding: 18px 22px !important;
+    overflow-y: auto;           /* scroll if FB post is very tall */
+    max-height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .announce-card.has-embed .post-title { color: #1a1a2a !important; text-shadow: none; }
+  /* FB widget container - let SDK control its own sizing */
+  .fb-post, .fb-video {
+    max-width: 500px !important;
+  }
+
+
+  /* ══ SCHEDULE PANEL — large, readable ══ */
+  .schedule-panel {
+    position: fixed;
+    left: 8px;
+    top: 88px;
+    bottom: 68px;
+    width: 210px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: rgba(8,24,38,0.80);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(160,210,200,0.20);
+    border-radius: 14px;
+    padding: 10px 10px 8px;
+    overflow: hidden;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+    animation: schDrift 20s ease-in-out infinite;
+  }
+  @keyframes schDrift {
+    0%,100%{ transform:translateY(0); opacity:0.94; }
+    40%    { transform:translateY(-2px); opacity:0.97; }
+    70%    { transform:translateY(1px); opacity:0.92; }
+  }
+  .sch-title {
+    font-size: 13px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--accent2, #f0d090);
+    text-align: center; padding: 0 0 7px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    margin-bottom: 6px;
+    font-family: 'Fredoka One', 'Montserrat', cursive;
+  }
+  .sch-list {
+    display: flex; flex-direction: column;
+    flex: 1; overflow: hidden;
+    justify-content: space-evenly;
+    gap: 2px;
+  }
+  .sch-item {
+    display: flex; flex-direction: column;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border-left: 3px solid rgba(160,210,200,0.22);
+    transition: background 0.4s, border-color 0.4s;
+    min-height: 0;
+  }
+  .sch-item.active {
+    background: rgba(160,210,200,0.18);
+    border-left-color: var(--accent, #a0d4c8);
+    animation: schActivePulse 3s ease-in-out infinite;
+  }
+  .sch-item.past { opacity: 0.32; }
+  @keyframes schActivePulse {
+    0%,100%{ background:rgba(160,210,200,0.15); }
+    50%    { background:rgba(160,210,200,0.26); }
+  }
+  .sch-time {
+    font-size: 11px; font-weight: 700;
+    color: rgba(200,232,225,0.60); line-height: 1.2;
+    letter-spacing: 0.2px;
+  }
+  .sch-label {
+    font-size: 14px; font-weight: 800;
+    color: rgba(230,248,242,0.96); line-height: 1.2;
+  }
+  .sch-sub {
+    font-size: 10.5px; font-weight: 500;
+    color: rgba(190,220,215,0.60); line-height: 1.25;
+    margin-top: 1px;
+  }
+  /* Slide container accounts for wider schedule */
+  #slide-container { left: 226px !important; }
+  #progress-bar    { left: 226px !important; }
+
+
+  /* ══ EMBED SLIDES — transparent, full area ══ */
+  .slide.has-embed-slide .announce-card,
+  .announce-card.has-embed {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    width: 100%;
+    height: 100%;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .slide.has-embed-slide {
+    padding: 0 !important;
+  }
+  /* FB widget gets full width */
+  .slide-embed { width:100%; display:flex; justify-content:center; align-items:flex-start; }
+  .slide-embed .fb-post, .slide-embed .fb-video { max-width:600px !important; }
+  .slide-embed iframe {
+    border: none; border-radius: 12px;
+    max-width: 100%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+
+  /* ══ SCHEDULE PANEL — TV-readable, large fonts ══ */
+  .schedule-panel {
+    position: fixed;
+    left: 8px; top: 88px; bottom: 68px;
+    width: 218px;
+    z-index: 50;
+    display: flex; flex-direction: column;
+    background: rgba(6,20,34,0.88);
+    backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(160,210,200,0.22);
+    border-radius: 16px;
+    padding: 12px 10px 10px;
+    font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    animation: schDrift 22s ease-in-out infinite;
+  }
+  @keyframes schDrift {
+    0%,100%{ transform:translateY(0); opacity:0.95; }
+    45%    { transform:translateY(-2px); opacity:0.98; }
+    75%    { transform:translateY(1px); opacity:0.93; }
+  }
+  .sch-title {
+    font-size: 14px; font-weight: 900; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--accent2, #f0d090);
+    text-align: center; padding-bottom: 8px;
+    border-bottom: 1.5px solid rgba(255,255,255,0.14);
+    margin-bottom: 8px;
+    font-family: 'Fredoka One', 'Montserrat', cursive;
+  }
+  .sch-list {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: space-evenly;
+    gap: 3px; overflow: hidden;
+  }
+  .sch-item {
+    display: flex; flex-direction: column;
+    padding: 7px 9px; border-radius: 9px;
+    border-left: 3.5px solid rgba(160,210,200,0.20);
+    transition: all 0.5s ease;
+  }
+  .sch-item.active {
+    background: rgba(160,210,200,0.20) !important;
+    border-left-color: var(--accent, #a0d4c8) !important;
+    animation: schActive 2.5s ease-in-out infinite;
+  }
+  .sch-item.past { opacity: 0.28; }
+  @keyframes schActive {
+    0%,100%{ background:rgba(160,210,200,0.17); }
+    50%    { background:rgba(160,210,200,0.28); }
+  }
+  .sch-time {
+    font-size: 11.5px; font-weight: 700;
+    color: rgba(185,225,218,0.62);
+    line-height: 1.2; letter-spacing: 0.1px;
+  }
+  .sch-label {
+    font-size: 15px; font-weight: 900;
+    color: rgba(235,252,248,0.98);
+    line-height: 1.2; margin-top: 1px;
+  }
+  .sch-sub {
+    font-size: 11px; font-weight: 600;
+    color: rgba(185,218,214,0.58);
+    line-height: 1.3; margin-top: 1px;
+  }
+  /* Slide + progress adjust for 218px schedule */
+  #slide-container { left: 234px !important; }
+  #progress-bar    { left: 234px !important; }
+
+
+  /* ══ HNRH FLAMES — fire shimmer title ══ */
+  .themed-title {
+    position: relative;
+    color: transparent !important;
+    background: linear-gradient(
+      90deg,
+      #8b0000 0%, #cc2200 10%, #ff6600 20%,
+      #ffcc00 30%, #ffffff 40%,
+      #ffcc00 50%, #ff6600 60%,
+      #cc2200 70%, #8b0000 80%,
+      #ff6600 90%, #ffcc00 100%
+    );
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: flameShimmer 2.2s linear infinite;
+    text-shadow: none !important;
+    filter: drop-shadow(0 0 10px rgba(255,80,0,0.60));
+  }
+  @keyframes flameShimmer {
+    0%   { background-position: 0% center;   filter: drop-shadow(0 0 8px rgba(255,80,0,0.5)); }
+    33%  { background-position: 100% center;  filter: drop-shadow(0 0 18px rgba(255,150,0,0.85)); }
+    66%  { background-position: 200% center;  filter: drop-shadow(0 0 12px rgba(255,50,0,0.7)); }
+    100% { background-position: 300% center;  filter: drop-shadow(0 0 8px rgba(255,80,0,0.5)); }
+  }
+
+
+  /* Scale FB embed 1.25x for TV readability */
+  .slide-embed { transform-origin: top center; }
+  .slide-embed .fb-post,
+  .slide-embed .fb-video {
+    transform: scale(1.25);
+    transform-origin: top center;
+    max-width: 520px !important;
+  }
+  /* Add a subtle white frosted backdrop so FB text always readable */
+  .announce-card.has-embed .slide-embed {
+    background: rgba(255,255,255,0.92);
+    border-radius: 16px;
+    padding: 18px 20px 20px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.40);
+  }
+
+
+  /* HNRH — slower deep fire shimmer */
+  .themed-title {
+    color: transparent !important;
+    background: linear-gradient(90deg,
+      #7a0000 0%, #cc1100 12%, #ff5500 22%, #ffbb00 32%, #fff0a0 40%,
+      #ffbb00 50%, #ff5500 60%, #cc1100 70%, #7a0000 80%,
+      #ff5500 90%, #ffbb00 100%);
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: flameShimmer 4.2s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(255,80,0,0.65));
+  }
+  @keyframes flameShimmer {
+    0%   { background-position:0% center;   filter:drop-shadow(0 0 8px rgba(255,80,0,0.5)); }
+    30%  { background-position:90% center;  filter:drop-shadow(0 0 20px rgba(255,140,0,0.90)); }
+    60%  { background-position:200% center; filter:drop-shadow(0 0 14px rgba(255,40,0,0.70)); }
+    100% { background-position:300% center; filter:drop-shadow(0 0 8px rgba(255,80,0,0.5)); }
+  }
+
+  @keyframes titleBurst {
+    0%   { opacity:1; transform:translate(0,0) scale(1); }
+    100% { opacity:0; transform:translate(var(--tx,0px),var(--ty,-60px)) scale(0.2); }
+  }
+
+
+  /* ══ EMBED SLIDE: transparent outer area, content shrinks to widget ══ */
+
+  /* Override all prior embed card rules */
+  .slide.has-embed-slide .announce-card,
+  .announce-card.has-embed {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    width: 100%;
+    height: 100%;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .slide.has-embed-slide { padding: 0 !important; }
+
+  /* The .slide-embed wrapper: shrinks to content width */
+  .announce-card.has-embed .slide-embed {
+    width: auto !important;              /* shrinks to content, NOT 100% */
+    display: inline-flex !important;
+    flex-direction: column;
+    align-items: center;
+    max-width: 620px;
+    background: rgba(255,255,255,0.97);  /* clean white behind FB widget */
+    border-radius: 18px;
+    padding: 0;                          /* FB widget has own padding */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.50);
+    overflow: hidden;                    /* clip FB widget to our rounding */
+  }
+
+  /* FB widget fills wrapper width */
+  .announce-card.has-embed .slide-embed .fb-post,
+  .announce-card.has-embed .slide-embed .fb-video {
+    max-width: 560px !important;
+    transform: none !important;          /* remove the 1.25x scale (was too big) */
+    transform-origin: unset !important;
+  }
+
+  /* Non-FB iframes (Google Slides etc) also get clean container */
+  .announce-card.has-embed .slide-embed iframe {
+    border: none;
+    border-radius: 0;
+    display: block;
+    max-width: 100%;
+    box-shadow: none;
+  }
+
+
+  /* HNRH — static orange-red, gentle warm breathe only */
+  .themed-title {
+    color: #ff7722 !important;
+    -webkit-text-fill-color: #ff7722 !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    animation: hnrhGlowPulse 3.0s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(255,80,0,0.45);
+  }
+  @keyframes hnrhGlowPulse {
+    0%,100% { text-shadow: 0 0 8px rgba(255,80,0,0.40); color: #ff7722; filter: brightness(1.00); }
+    50%     { text-shadow: 0 0 22px rgba(255,140,0,0.78), 0 0 6px rgba(255,200,80,0.45); color: #ffaa44; filter: brightness(1.10); }
+  }
+
+
+</style>
+</head>
+<body>
+
+
+<canvas id="oceanCanvas"></canvas>
+<div id="loading-overlay"><div class="spinner"></div><p>Loading announcements…</p></div>
+
+<header id="header">
+  <div id="header-left">
+    <div id="school-logo">HNRH</div>
+    <div id="school-name">Hants North Rural High<span>CCRCE · Kennetcook, NS</span></div>
+  </div>
+  <div id="header-center">
+    <div id="clock-row">
+      <div id="clock">--:--</div>
+      <div id="clock-ampm">AM</div>
+    </div>
+    <div id="date-display">Loading date…</div>
+  </div>
+  <div id="header-right">
+    <div id="weather-widget">
+      <div id="weather-icon">🌤️</div>
+      <div>
+        <div id="weather-temp">--°C</div>
+        <div id="weather-desc">Kennetcook, NS</div>
+        <div id="weather-location">Loading weather…</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="qr-panel"><div id="qr-content-zone"></div><div id="qr-link-zone"></div></div>
+<div id="schedule-panel" class="schedule-panel">
+  <div class="sch-title">Daily Schedule</div>
+  <div class="sch-list">
+    <div class="sch-item" data-start="8:45"  data-end="9:45"><span class="sch-time">8:45–9:45</span><span class="sch-label">Period 1</span></div>
+    <div class="sch-item" data-start="9:45"  data-end="10:45"><span class="sch-time">9:45–10:45</span><span class="sch-label">Period 2</span></div>
+    <div class="sch-item" data-start="10:55" data-end="12:35" data-p3="true"><span class="sch-time">10:55–12:35</span><span class="sch-label">Period 3</span></div>
+    <div class="sch-item" data-start="11:15" data-end="11:55" data-jr="true"><span class="sch-time"> ↳ 11:15–11:55</span><span class="sch-label">Jr Lunch 7–9</span></div>
+    <div class="sch-item" data-start="11:55" data-end="12:35" data-sr="true"><span class="sch-time"> ↳ 11:55–12:35</span><span class="sch-label">Sr Lunch 10–12</span></div>
+    <div class="sch-item" data-start="12:35" data-end="13:35"><span class="sch-time">12:35–1:35</span><span class="sch-label">Period 4</span></div>
+    <div class="sch-item" data-start="13:40" data-end="14:40"><span class="sch-time">1:40–2:40</span><span class="sch-label">Period 5</span></div>
+    <div class="sch-item" data-start="14:40" data-end="15:15"><span class="sch-time">2:40–3:15</span><span class="sch-label">Bussing</span><span class="sch-sub">115·116·18·3·96·89</span></div>
+  </div>
+</div>
+<div id="slide-container"></div>
+<div id="progress-bar"></div>
+<footer id="footer"><button id="skip-btn" onclick="window._skipSlide&&window._skipSlide()" title="Next"><span id="skip-countdown">8</span><span>›</span></button><button id="pause-btn" onclick="window._togglePause&&window._togglePause()" title="Pause">⏸</button></footer>
+
+
+<script>
+const CONFIG = {
+  sheetsURL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLqtMqozOMVOltrCE_oOyqkrr43XByw5v-rvYj0ni6LYEDpkA5iA0PdO7m9OO4SlzY4cFW_jhQqFBz/pub?gid=0&single=true&output=csv',
+  slideDuration: 10000,
+  refreshInterval: 60000,
+  lat: 45.0667, lon: -63.7333,
+};
+const FALLBACK = [
+  {title:'',content:'Good morning, Hants North Rural High!',imageurl:'',linkurl:'',active:'showing'},
+  {title:'',content:'Add your Google Sheets URL to the config to show announcements here.',imageurl:'',linkurl:'',active:'showing'},
+];
+
+
+const SLIDE_MS  = 10000;   // 10 seconds per text post
+const IFRAME_MS = 20000;   // 20 seconds for FB/other embeds
+const VID_MS    = 60000;   // 1 minute for YouTube
+const SLIDES_MS = 60000;   // 1 minute for Google Slides
+
+
+// ══ RFC-4180 CSV PARSER (handles "" escaped quotes in iframes) ════
+function parseCSV(text) {
+  var lines = text.trim().split('\n').filter(function(l){return l.trim();});
+  if (!lines.length) return [];
+  function splitLine(line) {
+    var fields=[], cur='', inQ=false, i=0;
+    while (i < line.length) {
+      var ch = line[i];
+      if (inQ) {
+        if (ch==='"') {
+          if (i+1<line.length && line[i+1]==='"') { cur+='"'; i+=2; continue; }
+          else inQ=false;
+        } else cur+=ch;
+      } else {
+        if (ch==='"') inQ=true;
+        else if (ch===',') { fields.push(cur.trim()); cur=''; }
+        else cur+=ch;
+      }
+      i++;
+    }
+    fields.push(cur.trim());
+    return fields.map(function(f){return f.replace(/^"|"$/g,'').trim();});
+  }
+  var first=splitLine(lines[0]);
+  var isHdr=first[0]&&first[0].length<40&&/^(title|post|content|body|text|a)$/i.test(first[0].replace(/\s+/g,''));
+  var data=isHdr?lines.slice(1):lines;
+  return data.map(function(line){
+    var f=splitLine(line);
+    return {title:f[0]||'',content:f[1]||'',imageurl:f[2]||'',linkurl:f[3]||'',active:f[4]||''};
+  }).filter(function(r){
+    // Show unless "hide" is in the active field (case-insensitive)
+    return r.active.toLowerCase().indexOf('hide')===-1;
+  });
+}
+
+// ══ ROBUST SHEET LOADER with timeout, cache-bust, no-wipe-on-error ═
+var _lastGoodSlides = null;
+async function loadSlides() {
+  if (!CONFIG.sheetsURL || CONFIG.sheetsURL.indexOf('YOUR_')!==-1) {
+    if (!_lastGoodSlides) slides = FALLBACK;
+    return;
+  }
+  try {
+    var controller = typeof AbortController!=='undefined' ? new AbortController() : null;
+    var timer = controller ? setTimeout(function(){controller.abort();}, 12000) : null;
+    var opts = controller ? {signal:controller.signal} : {};
+    // Cache-bust: append timestamp so TV browser never serves stale CSV
+    var url = CONFIG.sheetsURL + '&_cb=' + Date.now();
+    var r = await fetch(url, opts);
+    if (timer) clearTimeout(timer);
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    var t = await r.text();
+    var p = parseCSV(t);
+    if (p.length > 0) {
+      slides = p;
+      _lastGoodSlides = p;  // keep last good data
+    } else if (_lastGoodSlides) {
+      slides = _lastGoodSlides;  // don't wipe on empty parse
+    } else {
+      slides = FALLBACK;
+    }
+  } catch(e) {
+    // Network error or timeout: keep last good data, don't wipe
+    if (_lastGoodSlides) slides = _lastGoodSlides;
+    else slides = FALLBACK;
+  }
+}
+
+// ══ CLOCK (12-hour with AM/PM) ════════════════════════════════════
+function updateClock() {
+  var n=new Date(), h0=n.getHours(), m=n.getMinutes();
+  var ampm=h0>=12?'PM':'AM', h=h0%12||12;
+  var ce=document.getElementById('clock'), ae=document.getElementById('clock-ampm');
+  if(ce) ce.textContent=h+':'+String(m).padStart(2,'0');
+  if(ae) ae.textContent=ampm;
+  var D=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var de=document.getElementById('date-disp');
+  if(de) de.textContent=D[n.getDay()]+', '+M[n.getMonth()]+' '+n.getDate()+', '+n.getFullYear();
+}
+setInterval(updateClock,1000); updateClock();
+
+// ══ WEATHER (graceful failure) ════════════════════════════════════
+var WC={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+var WD={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'};
+var _weatherState=0;
+function _wxEl(id){return document.getElementById(id);}
+async function fetchWeather() {
+  try {
+    var controller=typeof AbortController!=='undefined'?new AbortController():null;
+    var timer=controller?setTimeout(function(){controller.abort();},8000):null;
+    var opts=controller?{signal:controller.signal}:{};
+    var r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+CONFIG.lat+'&longitude='+CONFIG.lon+'&current=temperature_2m,weathercode,windspeed_10m&timezone=America/Halifax',opts);
+    if(timer)clearTimeout(timer);
+    if(!r.ok)throw new Error('wx:'+r.status);
+    var d=await r.json(); var c=d.current;
+    var code=c.weathercode||0;
+    _weatherState=(code>=95)?5:(code>=80||code>=61&&code<=65)?3:(code>=51&&code<=55)?2:(code>=71&&code<=75)?4:(code===45||code===48)?6:(code>=2&&code<=3)?1:0;
+    window._weatherState=_weatherState;
+    if(_wxEl('wx-icon'))_wxEl('wx-icon').textContent=WC[code]||'🌡️';
+    if(_wxEl('wx-temp'))_wxEl('wx-temp').textContent=Math.round(c.temperature_2m)+'°C';
+    if(_wxEl('wx-desc'))_wxEl('wx-desc').textContent=WD[code]||'Kennetcook, NS';
+    if(_wxEl('wx-wind'))_wxEl('wx-wind').textContent='WIND: '+Math.round(c.windspeed_10m)+' KM/H';
+  } catch(e) {
+    if(_wxEl('wx-desc'))_wxEl('wx-desc').textContent='Weather unavailable';
+  }
+}
+fetchWeather(); setInterval(fetchWeather,600000);
+
+// ══ SCHEDULE HIGHLIGHTER ═════════════════════════════════════════
+function updateSchedule() {
+  var n=new Date(), cur=n.getHours()*60+n.getMinutes();
+  function toM(s){var p=(s||'').split(':').map(Number);return(p[0]||0)*60+(p[1]||0);}
+  var P3S=toM('10:55'),P3E=toM('12:35'),JRS=toM('11:15'),JRE=toM('11:55'),SRS=toM('11:55'),SRE=toM('12:35');
+  document.querySelectorAll('.si').forEach(function(el){
+    var s=toM(el.dataset.start),e=toM(el.dataset.end);
+    el.classList.remove('active','past','also-active');
+    if(el.dataset.p3){
+      if(cur>=P3S&&cur<P3E)el.classList.add('active'); else if(cur>=P3E)el.classList.add('past');
+    }else if(el.dataset.jr){
+      if(cur>=JRS&&cur<JRE){el.classList.add('active');el.classList.add('also-active');}else if(cur>=JRE)el.classList.add('past');
+    }else if(el.dataset.sr){
+      if(cur>=SRS&&cur<SRE){el.classList.add('active');el.classList.add('also-active');}else if(cur>=SRE)el.classList.add('past');
+    }else{
+      if(cur>=s&&cur<e)el.classList.add('active'); else if(cur>=e)el.classList.add('past');
+    }
+  });
+}
+setInterval(updateSchedule,15000); updateSchedule();
+
+// ══ CONTENT TYPE DETECTION ════════════════════════════════════════
+function isYT(s){return/youtube(?:-nocookie)?\.com|youtu\.be/.test(s);}
+function isGS(s){return/docs\.google\.com\/presentation|slides\.google\.com/.test(s);}
+function isFBEmbed(s){return s.indexOf('fb-post')!==-1||s.indexOf('fb-video')!==-1||(s.indexOf('data-href')!==-1&&s.indexOf('facebook.com')!==-1);}
+
+function extractYTSrc(raw){
+  var m=raw.match(/src=["']?([^"'\s>]*youtube[^"'\s>]*)["']?/i);
+  if(m){var s=m[1].replace(/&amp;/g,'&');if(isYT(s))return s;}
+  var b=raw.match(/https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([\w-]+)/);
+  return b?b[0]:null;
+}
+function extractGSSrc(raw){
+  var m=raw.match(/src=["']?([^"'\s>]*(?:presentation|slides\.google)[^"'\s>]*)["']?/i);
+  if(m)return m[1].replace(/&amp;/g,'&');
+  var b=raw.match(/https?:\/\/[^\s<>"]*(?:presentation|slides\.google)[^\s<>"]*/i);
+  return b?b[0]:null;
+}
+function makeYTEmbed(src){
+  src=src.replace(/&amp;/g,'&');
+  var tsM=src.match(/[?&]t=(\d+)/),startSec=tsM?tsM[1]:null;
+  src=src.replace(/[?&]t=\d+/g,'');
+  src=src.replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/watch\?v=/,'www.youtube-nocookie.com/embed/')
+         .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/live\//,'www.youtube-nocookie.com/embed/')
+         .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/shorts\//,'www.youtube-nocookie.com/embed/')
+         .replace(/(?:www\.)?youtu\.be\//,'www.youtube-nocookie.com/embed/');
+  if(src.indexOf('/embed/')===-1){var id=(src.split('/').pop()||'').split('?')[0];src='https://www.youtube-nocookie.com/embed/'+id;}
+  var vidM=src.match(/\/embed\/([\w-]+)/);var vid=vidM?vidM[1]:'';
+  if(!vid)return null;
+  var url='https://www.youtube-nocookie.com/embed/'+vid+'?autoplay=1&mute=1&rel=0&playsinline=1&modestbranding=1';
+  if(startSec)url+='&start='+startSec;
+  return url;
+}
+function makeGSEmbed(src){
+  src=src.replace(/&amp;/g,'&');
+  var bM=src.match(/(https?:\/\/[^/]+\/.*?\/d\/e\/[^/]+)/);
+  if(bM)return bM[1]+'/embed?start=true&loop=true&delayms=4000&rm=minimal';
+  return src.split('?')[0].replace(/\/(pub|pubembed|present|embed)\/?$/,'')+'/embed?start=true&loop=true&delayms=4000&rm=minimal';
+}
+
+// ══ VIDEO OVERLAY (YouTube + Google Slides) ═══════════════════════
+var _vidTimer=null, _vidCB=null;
+function showVid(url,ms,onDone){
+  _vidCB=onDone;
+  var box=document.getElementById('vid');
+  if(!box)return;
+  box.innerHTML='<iframe src="'+url+'" allowfullscreen allow="autoplay;fullscreen;picture-in-picture;encrypted-media" style="width:100%;height:100%;border:none;" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+  box.classList.add('on');
+  _setBar(ms); _startCdt(ms);
+  if(_vidTimer)clearTimeout(_vidTimer);
+  _vidTimer=setTimeout(function(){hideVid();if(_vidCB){_vidCB();_vidCB=null;}},ms);
+}
+function hideVid(){
+  if(_vidTimer){clearTimeout(_vidTimer);_vidTimer=null;}
+  var box=document.getElementById('vid');
+  if(box){box.classList.remove('on');box.innerHTML='';}
+}
+
+// ══ PROGRESS BAR + COUNTDOWN ══════════════════════════════════════
+var _cdtRAF=null;
+function _setBar(ms){
+  var bar=document.getElementById('prog-bar');if(!bar)return;
+  bar.style.transition='none';bar.style.width='0%';void bar.offsetWidth;
+  bar.style.transition='width '+ms+'ms linear';bar.style.width='100%';
+}
+function _startCdt(ms){
+  if(_cdtRAF)cancelAnimationFrame(_cdtRAF);
+  var el=document.getElementById('skipc');if(!el)return;
+  var start=performance.now();
+  function tick(now){
+    var pct=Math.min(100,(now-start)/ms*100);
+    var secs=Math.ceil(Math.max(0,ms-(now-start))/1000);
+    el.textContent=secs>0?secs:'›';
+    el.style.background='conic-gradient(rgba(255,255,255,0.55) '+pct+'%,rgba(255,255,255,0.10) '+pct+'%)';
+    if((now-start)<ms)_cdtRAF=requestAnimationFrame(tick);else el.textContent='›';
+  }
+  _cdtRAF=requestAnimationFrame(tick);
+}
+
+// ══ SLIDE ENGINE ══════════════════════════════════════════════════
+var slides=[], currentSlide=0, _advTimer=null, _paused=false;
+
+function _durFor(idx){
+  if(!slides[idx])return SLIDE_MS;
+  var d=(slides[idx].content||'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+  if(isFBEmbed(d)||(d.trim().toLowerCase().startsWith('<iframe')&&!isYT(d)&&!isGS(d)))return IFRAME_MS;
+  return SLIDE_MS;
+}
+function _startTimer(ms){
+  if(_advTimer)clearTimeout(_advTimer);
+  if(_paused)return;
+  _setBar(ms);_startCdt(ms);
+  _advTimer=setTimeout(function(){goToSlide((currentSlide+1)%slides.length);},ms);
+}
+function goToSlide(idx){
+  if(!slides||!slides.length)return;
+  idx=((idx%slides.length)+slides.length)%slides.length;
+  var allS=document.querySelectorAll('.slide'),allD=document.querySelectorAll('.dot');
+  if(allS.length){
+    var prev=currentSlide;
+    allS[prev].classList.remove('active');if(allD[prev])allD[prev].classList.remove('active');
+  }
+  currentSlide=idx;
+  if(allS[idx])allS[idx].classList.add('active');
+  if(allD[idx])allD[idx].classList.add('active');
+  if(window.updateQR)updateQR(slides[idx]);
+  if(window.reprocessFB)setTimeout(reprocessFB,400);
+  setTimeout(sizeFonts,50);
+
+  var s=slides[idx];
+  if(!s){hideVid();_startTimer(SLIDE_MS);return;}
+  var raw=(s.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  var nextIdx=(idx+1)%slides.length;  // capture NOW — never stale
+
+  // YouTube → fullscreen
+  if(isYT(raw.toLowerCase())||/youtu\.be/.test(raw)){
+    var ytSrc=extractYTSrc(raw);var ytURL=ytSrc?makeYTEmbed(ytSrc):null;
+    if(ytURL){_setBar(VID_MS);_startCdt(VID_MS);showVid(ytURL,VID_MS,function(){goToSlide(nextIdx);});return;}
+    // extraction failed → show as normal text slide, never freeze
+  }
+  // Google Slides → fullscreen
+  if(isGS(raw.toLowerCase())){
+    var gsSrc=extractGSSrc(raw);var gsURL=gsSrc?makeGSEmbed(gsSrc):null;
+    if(gsURL){_setBar(SLIDES_MS);_startCdt(SLIDES_MS);showVid(gsURL,SLIDES_MS,function(){goToSlide(nextIdx);});return;}
+    // extraction failed → show as normal text slide, never freeze
+  }
+
+  hideVid();
+  _startTimer(_durFor(idx));
+}
+window._skipSlide=function(){
+  if(_advTimer)clearTimeout(_advTimer);if(_cdtRAF)cancelAnimationFrame(_cdtRAF);
+  if(document.getElementById('vid').classList.contains('on')){hideVid();goToSlide((currentSlide+1)%slides.length);return;}
+  goToSlide((currentSlide+1)%slides.length);
+};
+window._togglePause=function(){
+  _paused=!_paused;
+  var btn=document.getElementById('pause-btn');
+  if(btn){btn.textContent=_paused?'▶':'⏸';btn.classList.toggle('paused',_paused);}
+  if(_paused){if(_advTimer)clearTimeout(_advTimer);if(_cdtRAF)cancelAnimationFrame(_cdtRAF);var bar=document.getElementById('prog-bar');if(bar)bar.style.transition='none';}
+  else _startTimer(5000);
+};
+
+// ══ BODY CONTENT RENDERER ════════════════════════════════════════
+function renderBodyContent(content){
+  if(!content)return'';
+  var dec=content.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"');
+  if(isFBEmbed(dec))return'<div class="emb"><div class="fb-wrap">'+dec+'</div></div>';
+  var isIframe=dec.trim().toLowerCase().startsWith('<iframe');
+  if(isIframe&&!isYT(dec)&&!isGS(dec)){
+    var html=dec;
+    if(!html.match(/height=/i))html=html.replace('<iframe','<iframe height="400"');
+    if(!html.match(/width=/i))html=html.replace('<iframe','<iframe width="700"');
+    return'<div class="emb">'+html+'</div>';
+  }
+  if(isYT(dec)||isGS(dec))return'<div class="vid-placeholder">&#9654; Loading media&#8230;</div>';
+  // Bare image URL in content
+  if(!dec.includes('<')&&/^https?:\/\//i.test(dec)&&/\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i.test(dec))
+    return'<img class="slide-img" src="'+dec+'" alt="" onerror="this.style.display=\'none\'">';
+  var txt=content.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+  txt=txt.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  txt=txt.replace(/(^|[\s>])(https?:\/\/[^\s<)"]+)/g,'$1<a href="$2" target="_blank">$2</a>');
+  txt=txt.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  txt=txt.replace(/\n/g,'<br>');
+  var chars=txt.replace(/<[^>]*>/g,'').length;
+  return'<p class="pbody'+(chars>120?' long':'')+'">' +txt+'</p>';
+}
+
+// ══ FONT SIZING ═══════════════════════════════════════════════════
+function sizeFonts(){
+  document.querySelectorAll('.slide.active .pbody').forEach(function(el){
+    var card=el.closest('.card');if(!card)return;
+    var chars=el.textContent.trim().length;
+    var sz=chars<=20?54:chars<=50?44:chars<=100?36:chars<=200?28:chars<=400?22:chars<=700?18:chars<=1200?15:13;
+    el.style.fontSize=sz+'px';
+    el.style.lineHeight=sz>=40?'1.2':sz>=28?'1.4':'1.6';
+    // overflow shrink
+    requestAnimationFrame(function(){
+      for(var i=0;i<8&&el.scrollHeight>card.clientHeight-20;i++){
+        sz=Math.max(11,sz-1.5);el.style.fontSize=sz+'px';
+      }
+    });
+  });
+}
+
+// ══ FACEBOOK SDK ══════════════════════════════════════════════════
+(function(){
+  if(typeof document==='undefined'||document.getElementById('facebook-jssdk'))return;
+  window.fbAsyncInit=function(){if(window.FB)FB.init({xfbml:true,version:'v19.0'});};
+  var js=document.createElement('script');js.id='facebook-jssdk';
+  js.src='https://connect.facebook.net/en_US/sdk.js';js.async=true;js.defer=true;
+  document.head.appendChild(js);
+})();
+function reprocessFB(){if(window.FB&&window.FB.XFBML){try{FB.XFBML.parse();}catch(e){}}}
+window.reprocessFB=reprocessFB;
+
+// ══ INIT ══════════════════════════════════════════════════════════
+async function init(){
+  await loadSlides();
+  renderSlides();
+  if(slides.length)goToSlide(0);
+  setInterval(async function(){
+    var old=JSON.stringify(slides.map(function(s){return s.title+s.content+s.active;}));
+    await loadSlides();
+    var now=JSON.stringify(slides.map(function(s){return s.title+s.content+s.active;}));
+    if(old!==now){var ci=currentSlide;renderSlides();goToSlide(Math.min(ci,slides.length-1));}
+  },CONFIG.refreshInterval);
+}
+init();
+
+
+(function(){
+  try{
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload=function(){window._qrReady=true;};
+    s.onerror=function(){window._qrReady=false;};  // CDN blocked: silent fail
+    document.head.appendChild(s);
+  }catch(e){window._qrReady=false;}
+})();
+function _extractURLs(text){
+  if(!text)return[];
+  var stripped=text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/<[^>]*>/g,' ');
+  var out=[],re=/https?:\/\/[^\s<>"',)\]]+/g,m;
+  while((m=re.exec(stripped)))out.push(m[0]);
+  return out.filter(function(v,i,a){return a.indexOf(v)===i;});
+}
+function _shortLabel(url){try{var u=new URL(url);var l=u.hostname.replace('www.','')+u.pathname.replace(/\/$/,'');return l.length>22?l.slice(0,20)+'…':l;}catch(e){return url.slice(0,22);}}
+function _buildQRItem(url,flame){
+  var wrap=document.createElement('div');wrap.className='qi'+(flame?' flame':'');
+  var box=document.createElement('div');box.className='qb';
+  var lbl=document.createElement('div');lbl.className='ql';
+  lbl.textContent=flame?'🔗 '+_shortLabel(url):_shortLabel(url);
+  wrap.appendChild(box);wrap.appendChild(lbl);
+  try{if(window.QRCode)new QRCode(box,{text:url,width:108,height:108,colorDark:'#111',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}
+  catch(e){box.style.cssText='width:108px;height:108px;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;padding:4px;text-align:center;';box.textContent=url.slice(0,40);}
+  setTimeout(function(){wrap.classList.add('vis');},80);
+  return wrap;
+}
+function updateQR(slideData){
+  var cz=document.getElementById('qr-content-zone');
+  var lz=document.getElementById('qr-link-zone');
+  if(!cz||!lz)return;
+  cz.innerHTML='';lz.innerHTML='';
+  if(!slideData)return;
+  var decoded=(slideData.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  var urls=[];
+  if(isFBEmbed(decoded)){var fbM=decoded.match(/data-href=["'](https?:\/\/www\.facebook\.com\/[^"']+)["']/i);if(fbM)urls=[fbM[1]];}
+  else urls=_extractURLs((slideData.title||'')+' '+(slideData.content||'')).slice(0,2);
+  var linkURL=(slideData.linkurl||'').trim();
+  if(!urls.length&&!linkURL)return;
+  function build(){
+    if(!window._qrReady){
+      // If CDN failed, show text URLs instead of QR codes
+      if(window._qrReady===false){
+        urls.forEach(function(u){var d=document.createElement('div');d.className='qi vis';d.style.cssText='background:rgba(255,255,255,0.9);border-radius:8px;padding:6px;max-width:140px;word-break:break-all;font-size:9px;color:#333;text-align:center;margin:4px auto;';d.textContent=_shortLabel(u);cz.appendChild(d);});
+        return;
+      }
+      setTimeout(build,100);return;
+    }
+    urls.forEach(function(u){cz.appendChild(_buildQRItem(u,false));});
+    if(linkURL)lz.appendChild(_buildQRItem(linkURL,true));
+  }
+  setTimeout(build,150);
+}
+window.updateQR=updateQR;
+
+
+function renderSlides(){
+  var c=document.getElementById('slides');c.innerHTML='';
+  var f=document.getElementById('ftr');
+  var sb=document.getElementById('skip-btn'),pb=document.getElementById('pause-btn');
+  f.innerHTML='';if(pb)f.appendChild(pb);if(sb)f.appendChild(sb);
+  slides.forEach(function(s,i){
+    var div=document.createElement('div');div.className='slide'+(i===0?' active':'');
+    var title=(s.title||'').trim();
+    var content=(s.content||'').trim();
+    var imageurl=(s.imageurl||'').trim();
+    var dec=content.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    var imgExt=/\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i;
+    var imgSrc='';
+    if(imageurl&&/^https?:\/\//i.test(imageurl))imgSrc=imageurl;
+    else if(!dec.trim().startsWith('<')&&/^https?:\/\//i.test(dec)&&imgExt.test(dec))imgSrc=dec;
+    var hasImg=imgSrc.length>0;
+    var isFB=isFBEmbed(dec);
+    var isVid=isYT(dec)||isGS(dec);
+    var isIframe=dec.trim().toLowerCase().startsWith('<iframe');
+    var html='';
+    if(hasImg){
+      html='<div class="card img-card"><img class="slide-img" src="'+imgSrc+'" alt="" onerror="this.style.display=\'none\'">'+(title?'<div class="cap">'+title+'</div>':'')+'</div>';
+    }else if(isFB||(isIframe&&!isVid)){
+      div.classList.add('has-embed-slide');
+      html='<div class="card embed">'+renderBodyContent(content)+'</div>';
+    }else{
+      var body=isVid?'<div class="vid-placeholder">&#9654; Loading&#8230;</div>':renderBodyContent(content);
+      var th=title?'<div class="ptitle">'+title+'</div>':'';
+      html='<div class="card">'+th+body+'</div>';
+    }
+    div.innerHTML=html;c.appendChild(div);
+    var dot=document.createElement('div');dot.className='dot'+(i===0?' active':'');
+    (function(idx){dot.onclick=function(){goToSlide(idx);};})(i);
+    f.insertBefore(dot,f.querySelector('#pause-btn')||f.firstChild);
+  });
+  sizeFonts();
+}
+
+(function ocean() {
+  const canvas = document.getElementById('oceanCanvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, t = 0;
+
+  // ── Weather state (set by fetchWeather) ─────────────────
+  // 0=clear 1=clouds 2=rain 3=heavy-rain 4=snow 5=storm 6=fog
+  window._weatherState = 0;
+
+  // ── Wave layers — very slow, gentle ─────────────────────
+  // speed is tiny: full wave cycle takes ~3-4 minutes
+  const WAVES = [
+    { amp:14, freq:0.0050, spd:0.000045, y:0.44, col:'rgba(28, 88,118,0.50)' },
+    { amp:12, freq:0.0065, spd:0.000060, y:0.50, col:'rgba(38,108,140,0.56)' },
+    { amp:13, freq:0.0058, spd:0.000052, y:0.56, col:'rgba(48,125,158,0.62)' },
+    { amp:11, freq:0.0075, spd:0.000068, y:0.62, col:'rgba(60,140,172,0.68)' },
+    { amp:10, freq:0.0082, spd:0.000074, y:0.68, col:'rgba(74,156,185,0.74)' },
+    { amp: 9, freq:0.0090, spd:0.000082, y:0.74, col:'rgba(90,170,198,0.80)' },
+    { amp: 8, freq:0.0100, spd:0.000090, y:0.80, col:'rgba(108,186,210,0.87)' },
+    { amp: 6, freq:0.0115, spd:0.000100, y:0.86, col:'rgba(128,202,222,0.94)' },
+  ];
+
+  // ── Clouds ───────────────────────────────────────────────
+  let clouds = [];
+  // ── Foam particles ───────────────────────────────────────
+  let foam = [];
+  // ── Gulls ────────────────────────────────────────────────
+  let gulls = [];
+  // ── Precipitation ────────────────────────────────────────
+  let drops = [];  // rain or snow
+
+  function waveY(w, x) {
+    const tSec = t * 0.016; // ~60fps so t increments each frame
+    return H * w.y
+      + Math.sin(x * w.freq + tSec * w.spd * 6000) * w.amp
+      + Math.cos(x * w.freq * 0.6 + tSec * w.spd * 4500 + 1.4) * w.amp * 0.35;
+  }
+
+  // Cloud builder — puffball composite ellipses
+  function makeCloud(x, y, scale, alpha) {
+    return { x, y, scale, alpha,
+      vx: 0.008 + Math.random() * 0.012,  // very slow drift
+      puffs: [
+        {rx:scale*52, ry:scale*26, ox:0,         oy:0},
+        {rx:scale*38, ry:scale*22, ox:-scale*36,  oy:scale*8},
+        {rx:scale*34, ry:scale*20, ox: scale*38,  oy:scale*10},
+        {rx:scale*28, ry:scale*18, ox:-scale*14,  oy:-scale*14},
+        {rx:scale*24, ry:scale*16, ox: scale*20,  oy:-scale*10},
+      ]
+    };
+  }
+
+  function spawnCloud(offScreen) {
+    const y     = H * (0.05 + Math.random() * 0.22);
+    const scale = 0.5 + Math.random() * 0.7;
+    const alpha = 0.25 + Math.random() * 0.35;
+    const x     = offScreen ? -scale * 150 : Math.random() * W;
+    clouds.push(makeCloud(x, y, scale, alpha));
+  }
+
+  function spawnFoam() {
+    const w = WAVES[Math.floor(Math.random() * WAVES.length)];
+    foam.push({
+      x: Math.random() * W,
+      y: H * w.y,
+      vx:(Math.random()-0.5)*0.25,
+      vy:-0.08 - Math.random()*0.18,
+      r:  1.2 + Math.random()*2.2,
+      life:1, decay:0.003+Math.random()*0.006
+    });
+  }
+
+  function spawnDrop(snow) {
+    drops.push(snow
+      ? { x:Math.random()*W, y:-5,
+          vx:(Math.random()-0.5)*0.4, vy:0.4+Math.random()*0.5,
+          r:2+Math.random()*2, life:1, snow:true,
+          wobble:Math.random()*Math.PI*2, ws:0.02+Math.random()*0.02 }
+      : { x:Math.random()*W, y:-8,
+          vx:-0.3-Math.random()*0.5, vy:3+Math.random()*3,
+          len:6+Math.random()*10, life:1, snow:false }
+    );
+  }
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    initScene();
+  }
+
+  function initScene() {
+    clouds=[]; foam=[]; gulls=[]; drops=[];
+    for (let i=0;i<6;i++)  spawnCloud(false);
+    for (let i=0;i<40;i++) spawnFoam();
+    for (let i=0;i<4;i++) {
+      gulls.push({ x:Math.random()*W, y:H*(0.08+Math.random()*0.16),
+        vx:0.18+Math.random()*0.28, wing:Math.random()*Math.PI*2 });
+    }
+  }
+
+  // ── Sky gradient — changes with weather ─────────────────
+
+function getSkyTheme(){
+  const h=new Date().getHours(),m=new Date().getMinutes(),mins=h*60+m;
+  if(mins<600) return 'sunrise'; if(mins>=870) return 'sunset'; return 'day';
+}
+function getSkyColors(ws){
+  const t=getSkyTheme();
+  if(ws>=5) return{top:'#0d1a2a',mid:'#1a2e3e',hor:'#2a4050'};
+  if(ws>=3) return{top:'#1a2a3c',mid:'#2a4558',hor:'#3a5870'};
+  if(ws===6) return{top:'#2a3038',mid:'#384048',hor:'#505860'};
+  if(t==='sunrise') return{top:'#1a1228',mid:'#7a3820',hor:'#e88040'};
+  if(t==='sunset')  return{top:'#1a0e22',mid:'#7a2c50',hor:'#e06030'};
+  return{top:'#1a3a5c',mid:'#2a5f8a',hor:'#6aaccc'};
+}
+  function drawSky() {
+    const ws = window._weatherState;
+    let topCol, midCol, horCol;
+    if (ws >= 5) {
+      topCol='#0d1a2a'; midCol='#1a2e3e'; horCol='#2a4050'; // storm: dark
+    } else if (ws >= 3) {
+      topCol='#1a2a3c'; midCol='#2a4558'; horCol='#3a5870'; // rain: grey-blue
+    } else if (ws === 6) {
+      topCol='#2a3038'; midCol='#384048'; horCol='#505860'; // fog: grey
+    } else {
+      topCol='#1a3a5c'; midCol='#2a5f8a'; horCol='#6aaccc'; // clear/cloudy
+    }
+    const sky = ctx.createLinearGradient(0,0,0,H*0.46);
+    sky.addColorStop(0, topCol);
+    sky.addColorStop(0.5, midCol);
+    sky.addColorStop(1, horCol);
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H*0.47);
+  }
+
+  // ── Sun — visible on clear/partly-cloudy ─────────────────
+  function drawSun() {
+    const ws = window._weatherState;
+    if (ws >= 2) return; // hidden when cloudy/rainy
+    const sunX = W*0.75, sunY = H*0.18;
+    // Rays — slow rotation
+    const tSec = t * 0.016;
+    ctx.save();
+    ctx.translate(sunX, sunY);
+    ctx.rotate(tSec * 0.003);
+    for (let i=0;i<12;i++) {
+      const a = (i/12)*Math.PI*2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*34, Math.sin(a)*34);
+      ctx.lineTo(Math.cos(a)*52, Math.sin(a)*52);
+      ctx.strokeStyle=`rgba(255,230,120,${0.10+Math.sin(tSec*0.5+i)*0.03})`;
+      ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.stroke();
+    }
+    ctx.restore();
+    // Glow
+    const sunG=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,W*0.22);
+    sunG.addColorStop(0,'rgba(255,235,140,0.18)');
+    sunG.addColorStop(1,'transparent');
+    ctx.fillStyle=sunG; ctx.fillRect(0,0,W,H*0.5);
+    // Disc
+    const disc=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,26);
+    disc.addColorStop(0,'rgba(255,245,170,0.88)');
+    disc.addColorStop(0.5,'rgba(255,220,100,0.55)');
+    disc.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(sunX,sunY,26,0,Math.PI*2);
+    ctx.fillStyle=disc; ctx.fill();
+  }
+
+  // ── Clouds ────────────────────────────────────────────────
+  function drawClouds() {
+    const ws = window._weatherState;
+    // Spawn new clouds as they drift off right edge
+    while (clouds.length < (ws >= 2 ? 10 : 5)) spawnCloud(true);
+
+    for (let i=clouds.length-1;i>=0;i--) {
+      const cl = clouds[i];
+      cl.x += cl.vx;
+      if (cl.x > W + cl.scale*200) { clouds.splice(i,1); continue; }
+
+      // Darken clouds for rain/storm
+      const bright = ws >= 5 ? 140 : ws >= 3 ? 175 : 220;
+      ctx.save();
+      ctx.translate(cl.x, cl.y);
+      ctx.globalAlpha = cl.alpha * (ws >= 2 ? 1.3 : 1);
+      for (const p of cl.puffs) {
+        ctx.beginPath();
+        ctx.ellipse(p.ox, p.oy, p.rx, p.ry, 0, 0, Math.PI*2);
+        ctx.fillStyle=`rgb(${bright},${bright},${bright+10})`;
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  // ── Fog overlay ──────────────────────────────────────────
+  function drawFog() {
+    if (window._weatherState !== 6) return;
+    const tSec = t*0.016;
+    for (let i=0;i<3;i++) {
+      const x = (W*0.5 + Math.sin(tSec*0.01+i*2.1)*W*0.35 - W*0.2);
+      const g=ctx.createRadialGradient(x,H*0.4,0,x,H*0.4,W*0.55);
+      g.addColorStop(0,'rgba(180,190,200,0.18)');
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  // ── Precipitation ─────────────────────────────────────────
+  function drawPrecip() {
+    const ws = window._weatherState;
+    if (ws < 2) { drops=[]; return; }
+    const isSnow = ws === 4;
+    const isStorm = ws >= 5;
+    const spawnRate = isStorm ? 6 : ws >= 3 ? 3 : 1;
+    for (let i=0;i<spawnRate;i++) spawnDrop(isSnow);
+
+    for (let i=drops.length-1;i>=0;i--) {
+      const d=drops[i];
+      if (d.snow) {
+        d.wobble+=d.ws; d.x+=d.vx+Math.sin(d.wobble)*0.3; d.y+=d.vy;
+        if (d.y>H) { drops.splice(i,1); continue; }
+        ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(220,235,255,${0.55+Math.sin(d.wobble)*0.15})`; ctx.fill();
+      } else {
+        d.x+=d.vx; d.y+=d.vy;
+        if (d.y>H) { drops.splice(i,1); continue; }
+        ctx.beginPath();
+        ctx.moveTo(d.x,d.y);
+        ctx.lineTo(d.x+d.vx*1.5, d.y-d.len);
+        ctx.strokeStyle=`rgba(180,210,235,${isStorm?0.55:0.35})`;
+        ctx.lineWidth=isStorm?1.2:0.8; ctx.stroke();
+      }
+    }
+  }
+
+  // ── Waves ─────────────────────────────────────────────────
+  function drawWaves() {
+    for (const w of WAVES) {
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let x=0;x<=W;x+=5) {
+        const y = waveY(w,x);
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+      ctx.fillStyle=w.col; ctx.fill();
+      // Subtle crest highlight
+      ctx.beginPath();
+      for (let x=0;x<=W;x+=5){const y=waveY(w,x)-1.5;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+      ctx.strokeStyle='rgba(200,230,245,0.12)'; ctx.lineWidth=1.8; ctx.stroke();
+    }
+  }
+
+  // ── Foam ──────────────────────────────────────────────────
+  function drawFoam() {
+    while (foam.length < 40) spawnFoam();
+    for (let i=foam.length-1;i>=0;i--) {
+      const p=foam[i];
+      p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
+      if (p.life<=0){foam.splice(i,1);continue;}
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);
+      ctx.fillStyle=`rgba(210,235,248,${p.life*0.50})`; ctx.fill();
+    }
+  }
+
+  // ── Horizon shimmer ───────────────────────────────────────
+  function drawHorizonShimmer() {
+    if (window._weatherState >= 3) return;
+    const refY=H*0.45;
+    const tSec=t*0.016;
+    for (let i=0;i<6;i++) {
+      const sx = (W*0.2+i*W*0.12+Math.sin(tSec*0.04+i)*W*0.04);
+      const a  = 0.06+Math.sin(tSec*0.08+i*0.8)*0.04;
+      ctx.beginPath();
+      ctx.ellipse(sx,refY,W*0.04,2.5,0,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,240,180,${a})`; ctx.fill();
+    }
+  }
+
+  // ── Seagulls ──────────────────────────────────────────────
+  function drawGulls() {
+    if (window._weatherState >= 5) return; // hide in storm
+    for (const g of gulls) {
+      g.x+=g.vx; g.wing+=0.03; // very slow wing beat
+      if (g.x>W+20){g.x=-20;g.y=H*(0.07+Math.random()*0.15);}
+      ctx.save(); ctx.translate(g.x,g.y);
+      ctx.strokeStyle='rgba(190,215,235,0.45)'; ctx.lineWidth=1.5; ctx.lineCap='round';
+      const wf=Math.sin(g.wing)*5;
+      ctx.beginPath();
+      ctx.moveTo(-10,0);ctx.quadraticCurveTo(-5,-wf,0,0);
+      ctx.moveTo(0,0);ctx.quadraticCurveTo(5,-wf,10,0);
+      ctx.stroke(); ctx.restore();
+    }
+  }
+
+  function loop() {
+    drawSky();
+    drawSun();
+    drawClouds();
+    drawFog();
+    drawHorizonShimmer();
+    drawWaves();
+    drawFoam();
+    drawPrecip();
+    drawGulls();
+    t++;
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resize);
+  resize(); loop();
+})();
+
+</script>
+</body>
+</html>

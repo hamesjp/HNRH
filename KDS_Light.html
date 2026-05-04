@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KDS Announcements (Light)</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;color:var(--text);}
+  /* HEADER */
+  #hdr{position:fixed;top:0;left:0;right:0;height:76px;z-index:200;background:var(--hdr);border-bottom:2px solid var(--acc)44;display:flex;align-items:center;padding:0 20px;gap:18px;}
+  #logo{width:48px;height:48px;border-radius:50%;background:var(--acc2);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:13px;color:#1a0e04;flex-shrink:0;text-align:center;line-height:1.1;}
+  #sname{font-family:'Fredoka One',cursive;font-size:17px;line-height:1.2;flex-shrink:0;}
+  #sname span{display:block;font-family:'Nunito',sans-serif;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+  #hdr-mid{flex:1;text-align:center;}
+  #clock-row{display:flex;align-items:baseline;justify-content:center;gap:5px;}
+  #clock{font-family:'Fredoka One',cursive;font-size:38px;color:var(--acc2);letter-spacing:2px;line-height:1;}
+  #clock-ampm{font-family:'Fredoka One',cursive;font-size:15px;color:var(--acc2);opacity:0.8;}
+  #date-disp{font-size:12px;color:var(--muted);text-align:center;margin-top:2px;}
+  #wx{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 14px;min-width:158px;flex-shrink:0;}
+  #wx-icon{font-size:22px;}
+  #wx-temp{font-family:'Fredoka One',cursive;font-size:20px;color:var(--text);line-height:1;display:block;}
+  #wx-desc{font-size:11px;color:var(--muted);display:block;margin-top:1px;}
+  #wx-wind{font-size:10px;color:var(--muted);display:block;}
+  /* SCHEDULE */
+  #sched{position:fixed;left:8px;top:84px;bottom:62px;width:212px;z-index:50;background:var(--sched);border:1.5px solid var(--acc)30;border-radius:14px;display:flex;flex-direction:column;padding:10px 9px 8px;font-family:'Nunito',sans-serif;animation:schDrift 22s ease-in-out infinite;}
+  @keyframes schDrift{0%,100%{transform:translateY(0);opacity:.95}50%{transform:translateY(-2px);opacity:.98}}
+  .sch-ttl{font-family:'Fredoka One',cursive;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--acc2);text-align:center;padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.10);margin-bottom:6px;}
+  #sched-list{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:2px;overflow:hidden;}
+  .si{display:flex;flex-direction:column;padding:6px 8px;border-radius:8px;border-left:3.5px solid var(--acc)30;transition:all .4s;}
+  .si.active{background:var(--acc)22;border-left-color:var(--acc);animation:siPulse 2.5s ease-in-out infinite;}
+  .si.past{opacity:.28;}
+  .si.also-active{border-left-color:var(--acc2)!important;background:var(--acc2)18!important;}
+  .si[data-jr],.si[data-sr]{padding-left:14px;}
+  @keyframes siPulse{0%,100%{background:var(--acc)18}50%{background:var(--acc)2e}}
+  .st{font-size:11px;font-weight:700;color:var(--acc)99;line-height:1.2;}
+  .sl{font-size:14px;font-weight:900;color:var(--text);line-height:1.2;}
+  .ss{font-size:10px;font-weight:600;color:var(--muted);line-height:1.3;margin-top:1px;}
+  /* QR PANEL */
+  #qrp{position:fixed;right:8px;top:84px;bottom:62px;width:148px;z-index:50;display:flex;flex-direction:column;align-items:center;pointer-events:none;}
+  #qr-content-zone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding-top:6px;width:100%;overflow:hidden;}
+  #qr-link-zone{width:100%;display:flex;flex-direction:column;align-items:center;padding-bottom:4px;min-height:136px;flex-shrink:0;}
+  .qi{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transition:opacity .4s;}
+  .qi.vis{opacity:1;}
+  .qb{width:108px;height:108px;background:#fff;border-radius:10px;padding:5px;box-shadow:0 4px 16px rgba(0,0,0,.40);overflow:hidden;}
+  .qb img,.qb canvas{width:100%!important;height:100%!important;border-radius:3px;}
+  .ql{font-size:9px;color:var(--muted);text-align:center;max-width:136px;word-break:break-all;background:rgba(10,26,38,.65);border-radius:4px;padding:2px 5px;}
+  .qi.flame .qb{animation:flameBdr 1.8s ease-in-out infinite;}
+  .qi.flame .ql{color:var(--acc2);}
+  @keyframes flameBdr{0%,100%{box-shadow:0 0 0 2.5px var(--acc),0 0 14px var(--acc)99}50%{box-shadow:0 0 0 3.5px var(--acc2),0 0 22px var(--acc2)88}}
+  /* SLIDE AREA */
+  #prog{position:fixed;bottom:62px;left:228px;right:164px;height:3px;z-index:199;background:rgba(255,255,255,.08);}
+  #prog-bar{height:100%;background:var(--acc);width:0%;transition:none;}
+  #slides{position:fixed;top:84px;left:228px;right:164px;bottom:62px;z-index:10;overflow:hidden;}
+  .slide{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:18px;}
+  .slide.active{display:flex;}
+  .card{background:var(--card);border:1px solid var(--acc)28;border-radius:18px;padding:26px 34px;max-width:100%;width:100%;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(8px);box-shadow:0 8px 32px rgba(0,0,0,.35);}
+  .card.embed{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;padding:0!important;height:100%;justify-content:center;}
+  .card.img-card{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;}
+  .ptitle{font-family:'Fredoka One',cursive;font-size:38px;color:var(--acc2);text-align:center;margin-bottom:12px;width:100%;animation:titleGlow 3s ease-in-out infinite;text-shadow:0 0 12px var(--acc2)50;}
+  @keyframes titleGlow{0%,100%{opacity:1}50%{opacity:.88;text-shadow:0 0 20px var(--acc2)80}}
+  .pbody{font-size:22px;font-weight:600;color:var(--text);line-height:1.55;text-align:center;width:100%;max-width:820px;word-break:break-word;}
+  .pbody.long{text-align:left;}
+  .pbody a{color:var(--acc);text-decoration:underline;word-break:break-all;}
+  .emb{width:100%;display:flex;justify-content:center;align-items:flex-start;}
+  .emb iframe{border:none;border-radius:12px;max-width:100%;box-shadow:0 8px 28px rgba(0,0,0,.4);}
+  .fb-wrap{background:rgba(255,255,255,.97);border-radius:16px;padding:0;overflow:hidden;max-width:580px;box-shadow:0 10px 36px rgba(0,0,0,.45);}
+  .fb-wrap .fb-post,.fb-wrap .fb-video{max-width:560px!important;}
+  .slide-img{max-width:100%;max-height:calc(100vh - 200px);object-fit:contain;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.4);}
+  .cap{font-size:14px;color:var(--muted);margin-top:8px;text-align:center;}
+  .vid-placeholder{color:rgba(200,230,225,.5);font-size:16px;padding:20px;text-align:center;}
+  /* VIDEO OVERLAY */
+  #vid{display:none;position:fixed;top:76px;left:0;right:0;bottom:62px;z-index:150;background:#000;align-items:center;justify-content:center;}
+  #vid.on{display:flex;}
+  #vid iframe{width:100%;height:100%;border:none;}
+  /* FOOTER */
+  #ftr{position:fixed;bottom:0;left:0;right:0;height:62px;z-index:200;background:var(--footer);border-top:1px solid var(--acc)30;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;flex-shrink:0;transition:background .3s;}
+  .dot.active{background:var(--acc2);}
+  #pause-btn,#skip-btn{position:absolute;background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.22);border-radius:8px;color:rgba(255,255,255,.82);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;padding:5px 13px;z-index:201;transition:background .2s;}
+  #pause-btn{right:80px;top:50%;transform:translateY(-50%);width:36px;justify-content:center;}
+  #skip-btn{right:16px;top:50%;transform:translateY(-50%);}
+  #pause-btn.paused{background:rgba(255,80,80,.22);border-color:rgba(255,80,80,.5);color:#ffaaaa;}
+  #skipc{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.35);font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;background:conic-gradient(rgba(255,255,255,.5) 0%,rgba(255,255,255,.10) 0%);}
+
+
+  :root{--acc:#5bb8d4;--acc2:#f5c842;--hdr:rgba(8,18,32,0.97);--card:rgba(14,32,50,0.90);--sched:rgba(8,20,34,0.92);--text:rgba(235,248,244,0.97);--muted:rgba(180,215,208,0.60);--footer:rgba(6,16,28,0.98);}
+
+  body { background: linear-gradient(160deg,#0e2236 0%,#0a3248 50%,#0d2a40 100%); }
+  .spark { position:fixed; border-radius:50%; pointer-events:none; z-index:1;
+    animation: sparkFloat linear infinite; opacity:0; }
+  @keyframes sparkFloat {
+    0%   { opacity:0; transform:translateY(0) scale(0.5); }
+    10%  { opacity:.9; }
+    80%  { opacity:.7; }
+    100% { opacity:0; transform:translateY(-80vh) scale(1.2) rotate(360deg); }
+  }
+
+  /* Schedule card (full-size slide) */
+  .sched-card{background:var(--card);border-radius:16px;padding:22px 28px;width:100%;max-width:700px;}
+  .sched-card-title{font-family:'Fredoka One',cursive;font-size:28px;color:var(--acc2);text-align:center;margin-bottom:14px;border-bottom:1px solid var(--acc)30;padding-bottom:8px;}
+  .sc-row{display:flex;align-items:baseline;gap:12px;padding:7px 10px;border-radius:8px;border-left:3px solid transparent;margin-bottom:3px;}
+  .sc-active{background:var(--acc)22;border-left-color:var(--acc);}
+  .sc-past{opacity:.30;}
+  .sc-t{font-size:12px;font-weight:700;color:var(--acc)aa;min-width:100px;flex-shrink:0;}
+  .sc-l{font-size:16px;font-weight:900;color:var(--text);}
+  .sc-s{font-size:11px;color:var(--muted);margin-left:4px;}
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div id="logo">KDS</div>
+  <div id="sname">Kennetcook District School<span>Elementary · CCRCE</span></div>
+  <div id="hdr-mid">
+    <div id="clock-row"><span id="clock">--:--</span><span id="clock-ampm">AM</span></div>
+    <div id="date-disp">Loading…</div>
+  </div>
+  <div id="wx">
+    <span id="wx-icon">🌡️</span>
+    <div>
+      <span id="wx-temp">--°C</span>
+      <span id="wx-desc">Kennetcook, NS</span>
+      <span id="wx-wind">Loading…</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div id="sched"><div class="sch-ttl">Today's Schedule</div>
+  <div id="sched-list">
+    <div class="si" data-start="8:45" data-end="10:45"><span class="st">8:45–10:45</span><span class="sl">All classes</span></div>
+    <div class="si" data-start="10:45" data-end="10:55"><span class="st">10:45–10:55</span><span class="sl">Recess</span></div>
+    <div class="si" data-start="10:55" data-end="11:55"><span class="st">10:55–11:55</span><span class="sl">All classes</span></div>
+    <div class="si" data-start="11:55" data-end="12:35"><span class="st">11:55–12:35</span><span class="sl">Lunch</span><span class="ss">Gr 3–6 out first · P,1,2 out second</span></div>
+    <div class="si" data-start="12:35" data-end="14:40"><span class="st">12:35–2:40</span><span class="sl">All classes</span></div>
+    <div class="si" data-start="14:40" data-end="15:15"><span class="st">2:40–3:15</span><span class="sl">Bussing</span><span class="ss">115 · 116 · 18 · 3 · 96 · 89</span></div>
+  </div></div>
+
+<!-- QR PANEL -->
+<div id="qrp">
+  <div id="qr-content-zone"></div>
+  <div id="qr-link-zone"></div>
+</div>
+
+<!-- SLIDES + PROGRESS -->
+<div id="prog"><div id="prog-bar"></div></div>
+<div id="slides"></div>
+<div id="vid"></div>
+
+<!-- FOOTER -->
+<div id="ftr">
+  <button id="pause-btn" onclick="_togglePause()">⏸</button>
+  <button id="skip-btn" onclick="_skipSlide()"><span id="skipc">10</span><span>›</span></button>
+</div>
+
+
+
+<script>
+const CONFIG = {
+  sheetsURL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSjGQJB5yH2w-HzG-LUX-ha7e9WxjAfPXQugMZPvQhouOIk4awpiyuOtkJeo8jRfqW8QNSU_fjvId2/pub?gid=0&single=true&output=csv',
+  slideDuration: 10000,
+  refreshInterval: 60000,
+  lat: 45.0667, lon: -63.7333,
+};
+const FALLBACK = [
+  {title:'',content:'Good morning, Kennetcook District School!',imageurl:'',linkurl:'',active:'showing'},
+  {title:'',content:'Add your Google Sheets URL to the config to show announcements here.',imageurl:'',linkurl:'',active:'showing'},
+];
+
+
+const SLIDE_MS  = 10000;   // 10 seconds per text post
+const IFRAME_MS = 20000;   // 20 seconds for other embeds
+const VID_MS    = 120000;  // 2 minutes for YouTube
+const SLIDES_MS = 40000;   // 40 seconds for Google Slides
+
+
+// ══ RFC-4180 CSV PARSER (handles "" escaped quotes in iframes) ════
+function parseCSV(text) {
+  var lines = text.trim().split('\n').filter(function(l){return l.trim();});
+  if (!lines.length) return [];
+  function splitLine(line) {
+    var fields=[], cur='', inQ=false, i=0;
+    while (i < line.length) {
+      var ch = line[i];
+      if (inQ) {
+        if (ch==='"') {
+          if (i+1<line.length && line[i+1]==='"') { cur+='"'; i+=2; continue; }
+          else inQ=false;
+        } else cur+=ch;
+      } else {
+        if (ch==='"') inQ=true;
+        else if (ch===',') { fields.push(cur.trim()); cur=''; }
+        else cur+=ch;
+      }
+      i++;
+    }
+    fields.push(cur.trim());
+    return fields.map(function(f){return f.replace(/^"|"$/g,'').trim();});
+  }
+  var first=splitLine(lines[0]);
+  var isHdr=first[0]&&first[0].length<40&&/^(title|post|content|body|text|a)$/i.test(first[0].replace(/\s+/g,''));
+  var data=isHdr?lines.slice(1):lines;
+  return data.map(function(line){
+    var f=splitLine(line);
+    return {title:f[0]||'',content:f[1]||'',imageurl:f[2]||'',linkurl:f[3]||'',active:f[4]||''};
+  }).filter(function(r){
+    // Show unless "hide" is in the active field (case-insensitive)
+    return r.active.toLowerCase().indexOf('hide')===-1;
+  });
+}
+
+// ══ ROBUST SHEET LOADER with timeout, cache-bust, no-wipe-on-error ═
+var _lastGoodSlides = null;
+async function loadSlides() {
+  if (!CONFIG.sheetsURL || CONFIG.sheetsURL.indexOf('YOUR_')!==-1) {
+    if (!_lastGoodSlides) slides = FALLBACK;
+    return;
+  }
+  try {
+    var controller = typeof AbortController!=='undefined' ? new AbortController() : null;
+    var timer = controller ? setTimeout(function(){controller.abort();}, 12000) : null;
+    var opts = controller ? {signal:controller.signal} : {};
+    // Cache-bust: append timestamp so TV browser never serves stale CSV
+    var url = CONFIG.sheetsURL + '&_cb=' + Date.now();
+    var r = await fetch(url, opts);
+    if (timer) clearTimeout(timer);
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    var t = await r.text();
+    var p = parseCSV(t);
+    if (p.length > 0) {
+      slides = p;
+      _lastGoodSlides = p;  // keep last good data
+    } else if (_lastGoodSlides) {
+      slides = _lastGoodSlides;  // don't wipe on empty parse
+    } else {
+      slides = FALLBACK;
+    }
+  } catch(e) {
+    // Network error or timeout: keep last good data, don't wipe
+    if (_lastGoodSlides) slides = _lastGoodSlides;
+    else slides = FALLBACK;
+  }
+}
+
+// ══ CLOCK (12-hour with AM/PM) ════════════════════════════════════
+function updateClock() {
+  var n=new Date(), h0=n.getHours(), m=n.getMinutes();
+  var ampm=h0>=12?'PM':'AM', h=h0%12||12;
+  var ce=document.getElementById('clock'), ae=document.getElementById('clock-ampm');
+  if(ce) ce.textContent=h+':'+String(m).padStart(2,'0');
+  if(ae) ae.textContent=ampm;
+  var D=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var de=document.getElementById('date-disp');
+  if(de) de.textContent=D[n.getDay()]+', '+M[n.getMonth()]+' '+n.getDate()+', '+n.getFullYear();
+}
+setInterval(updateClock,1000); updateClock();
+
+// ══ WEATHER (graceful failure) ════════════════════════════════════
+var WC={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+var WD={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'};
+var _weatherState=0;
+function _wxEl(id){return document.getElementById(id);}
+async function fetchWeather() {
+  try {
+    var controller=typeof AbortController!=='undefined'?new AbortController():null;
+    var timer=controller?setTimeout(function(){controller.abort();},8000):null;
+    var opts=controller?{signal:controller.signal}:{};
+    var r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+CONFIG.lat+'&longitude='+CONFIG.lon+'&current=temperature_2m,weathercode,windspeed_10m&timezone=America/Halifax',opts);
+    if(timer)clearTimeout(timer);
+    if(!r.ok)throw new Error('wx:'+r.status);
+    var d=await r.json(); var c=d.current;
+    var code=c.weathercode||0;
+    _weatherState=(code>=95)?5:(code>=80||code>=61&&code<=65)?3:(code>=51&&code<=55)?2:(code>=71&&code<=75)?4:(code===45||code===48)?6:(code>=2&&code<=3)?1:0;
+    window._weatherState=_weatherState;
+    if(_wxEl('wx-icon'))_wxEl('wx-icon').textContent=WC[code]||'🌡️';
+    if(_wxEl('wx-temp'))_wxEl('wx-temp').textContent=Math.round(c.temperature_2m)+'°C';
+    if(_wxEl('wx-desc'))_wxEl('wx-desc').textContent=WD[code]||'Kennetcook, NS';
+    if(_wxEl('wx-wind'))_wxEl('wx-wind').textContent='WIND: '+Math.round(c.windspeed_10m)+' KM/H';
+  } catch(e) {
+    if(_wxEl('wx-desc'))_wxEl('wx-desc').textContent='Weather unavailable';
+  }
+}
+fetchWeather(); setInterval(fetchWeather,600000);
+
+// ══ SCHEDULE HIGHLIGHTER ═════════════════════════════════════════
+function updateSchedule() {
+  var n=new Date(), cur=n.getHours()*60+n.getMinutes();
+  function toM(s){var p=(s||'').split(':').map(Number);return(p[0]||0)*60+(p[1]||0);}
+  var P3S=toM('10:55'),P3E=toM('12:35'),JRS=toM('11:15'),JRE=toM('11:55'),SRS=toM('11:55'),SRE=toM('12:35');
+  document.querySelectorAll('.si').forEach(function(el){
+    var s=toM(el.dataset.start),e=toM(el.dataset.end);
+    el.classList.remove('active','past','also-active');
+    if(el.dataset.p3){
+      if(cur>=P3S&&cur<P3E)el.classList.add('active'); else if(cur>=P3E)el.classList.add('past');
+    }else if(el.dataset.jr){
+      if(cur>=JRS&&cur<JRE){el.classList.add('active');el.classList.add('also-active');}else if(cur>=JRE)el.classList.add('past');
+    }else if(el.dataset.sr){
+      if(cur>=SRS&&cur<SRE){el.classList.add('active');el.classList.add('also-active');}else if(cur>=SRE)el.classList.add('past');
+    }else{
+      if(cur>=s&&cur<e)el.classList.add('active'); else if(cur>=e)el.classList.add('past');
+    }
+  });
+}
+setInterval(updateSchedule,15000); updateSchedule();
+
+// ══ CONTENT TYPE DETECTION ════════════════════════════════════════
+function isYT(s){return/youtube(?:-nocookie)?\.com|youtu\.be/.test(s);}
+function isGS(s){return/docs\.google\.com\/presentation|slides\.google\.com/.test(s);}
+function isFBEmbed(s){return s.indexOf('fb-post')!==-1||s.indexOf('fb-video')!==-1||(s.indexOf('data-href')!==-1&&s.indexOf('facebook.com')!==-1);}
+
+function extractYTSrc(raw){
+  var m=raw.match(/src=["']?([^"'\s>]*youtube[^"'\s>]*)["']?/i);
+  if(m){var s=m[1].replace(/&amp;/g,'&');if(isYT(s))return s;}
+  var b=raw.match(/https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([\w-]+)/);
+  return b?b[0]:null;
+}
+function extractGSSrc(raw){
+  var m=raw.match(/src=["']?([^"'\s>]*(?:presentation|slides\.google)[^"'\s>]*)["']?/i);
+  if(m)return m[1].replace(/&amp;/g,'&');
+  var b=raw.match(/https?:\/\/[^\s<>"]*(?:presentation|slides\.google)[^\s<>"]*/i);
+  return b?b[0]:null;
+}
+function makeYTEmbed(src){
+  src=src.replace(/&amp;/g,'&');
+  var tsM=src.match(/[?&]t=(\d+)/),startSec=tsM?tsM[1]:null;
+  src=src.replace(/[?&]t=\d+/g,'');
+  src=src.replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/watch\?v=/,'www.youtube-nocookie.com/embed/')
+         .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/live\//,'www.youtube-nocookie.com/embed/')
+         .replace(/(?:www\.)?youtube(?:-nocookie)?\.com\/shorts\//,'www.youtube-nocookie.com/embed/')
+         .replace(/(?:www\.)?youtu\.be\//,'www.youtube-nocookie.com/embed/');
+  if(src.indexOf('/embed/')===-1){var id=(src.split('/').pop()||'').split('?')[0];src='https://www.youtube-nocookie.com/embed/'+id;}
+  var vidM=src.match(/\/embed\/([\w-]+)/);var vid=vidM?vidM[1]:'';
+  if(!vid)return null;
+  var url='https://www.youtube-nocookie.com/embed/'+vid+'?autoplay=1&mute=1&rel=0&playsinline=1&modestbranding=1';
+  if(startSec)url+='&start='+startSec;
+  return url;
+}
+function makeGSEmbed(src){
+  src=src.replace(/&amp;/g,'&');
+  var bM=src.match(/(https?:\/\/[^/]+\/.*?\/d\/e\/[^/]+)/);
+  if(bM)return bM[1]+'/embed?start=true&loop=true&delayms=4000&rm=minimal';
+  return src.split('?')[0].replace(/\/(pub|pubembed|present|embed)\/?$/,'')+'/embed?start=true&loop=true&delayms=4000&rm=minimal';
+}
+
+// ══ VIDEO OVERLAY (YouTube + Google Slides) ═══════════════════════
+var _vidTimer=null, _vidCB=null;
+function showVid(url,ms,onDone){
+  _vidCB=onDone;
+  var box=document.getElementById('vid');
+  if(!box)return;
+  box.innerHTML='<iframe src="'+url+'" allowfullscreen allow="autoplay;fullscreen;picture-in-picture;encrypted-media" style="width:100%;height:100%;border:none;" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+  box.classList.add('on');
+  _setBar(ms); _startCdt(ms);
+  if(_vidTimer)clearTimeout(_vidTimer);
+  _vidTimer=setTimeout(function(){hideVid();if(_vidCB){_vidCB();_vidCB=null;}},ms);
+}
+function hideVid(){
+  if(_vidTimer){clearTimeout(_vidTimer);_vidTimer=null;}
+  var box=document.getElementById('vid');
+  if(box){box.classList.remove('on');box.innerHTML='';}
+}
+
+// ══ PROGRESS BAR + COUNTDOWN ══════════════════════════════════════
+var _cdtRAF=null;
+function _setBar(ms){
+  var bar=document.getElementById('prog-bar');if(!bar)return;
+  bar.style.transition='none';bar.style.width='0%';void bar.offsetWidth;
+  bar.style.transition='width '+ms+'ms linear';bar.style.width='100%';
+}
+function _startCdt(ms){
+  if(_cdtRAF)cancelAnimationFrame(_cdtRAF);
+  var el=document.getElementById('skipc');if(!el)return;
+  var start=performance.now();
+  function tick(now){
+    var pct=Math.min(100,(now-start)/ms*100);
+    var secs=Math.ceil(Math.max(0,ms-(now-start))/1000);
+    el.textContent=secs>0?secs:'›';
+    el.style.background='conic-gradient(rgba(255,255,255,0.55) '+pct+'%,rgba(255,255,255,0.10) '+pct+'%)';
+    if((now-start)<ms)_cdtRAF=requestAnimationFrame(tick);else el.textContent='›';
+  }
+  _cdtRAF=requestAnimationFrame(tick);
+}
+
+// ══ SLIDE ENGINE ══════════════════════════════════════════════════
+var slides=[], currentSlide=0, _advTimer=null, _paused=false;
+
+function _durFor(idx){
+  if(!slides[idx])return SLIDE_MS;
+  var d=(slides[idx].content||'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+  if(isFBEmbed(d)||(d.trim().toLowerCase().startsWith('<iframe')&&!isYT(d)&&!isGS(d)))return IFRAME_MS;
+  return SLIDE_MS;
+}
+function _startTimer(ms){
+  if(_advTimer)clearTimeout(_advTimer);
+  if(_paused)return;
+  _setBar(ms);_startCdt(ms);
+  _advTimer=setTimeout(function(){goToSlide((currentSlide+1)%slides.length);},ms);
+}
+function goToSlide(idx){
+  if(!slides||!slides.length)return;
+  idx=((idx%slides.length)+slides.length)%slides.length;
+  var allS=document.querySelectorAll('.slide'),allD=document.querySelectorAll('.dot');
+  if(allS.length){
+    var prev=currentSlide;
+    allS[prev].classList.remove('active');if(allD[prev])allD[prev].classList.remove('active');
+  }
+  currentSlide=idx;
+  if(allS[idx])allS[idx].classList.add('active');
+  if(allD[idx])allD[idx].classList.add('active');
+  if(window.updateQR)updateQR(slides[idx]);
+  if(window.reprocessFB)setTimeout(reprocessFB,400);
+  setTimeout(sizeFonts,50);
+
+  var s=slides[idx];
+  if(!s){hideVid();_startTimer(SLIDE_MS);return;}
+  var raw=(s.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  var nextIdx=(idx+1)%slides.length;  // capture NOW — never stale
+
+  // YouTube → fullscreen
+  if(isYT(raw.toLowerCase())||/youtu\.be/.test(raw)){
+    var ytSrc=extractYTSrc(raw);var ytURL=ytSrc?makeYTEmbed(ytSrc):null;
+    if(ytURL){_setBar(VID_MS);_startCdt(VID_MS);showVid(ytURL,VID_MS,function(){goToSlide(nextIdx);});return;}
+    // extraction failed → show as normal text slide, never freeze
+  }
+  // Google Slides → fullscreen
+  if(isGS(raw.toLowerCase())){
+    var gsSrc=extractGSSrc(raw);var gsURL=gsSrc?makeGSEmbed(gsSrc):null;
+    if(gsURL){_setBar(SLIDES_MS);_startCdt(SLIDES_MS);showVid(gsURL,SLIDES_MS,function(){goToSlide(nextIdx);});return;}
+    // extraction failed → show as normal text slide, never freeze
+  }
+
+  hideVid();
+  _startTimer(_durFor(idx));
+}
+window._skipSlide=function(){
+  if(_advTimer)clearTimeout(_advTimer);if(_cdtRAF)cancelAnimationFrame(_cdtRAF);
+  if(document.getElementById('vid').classList.contains('on')){hideVid();goToSlide((currentSlide+1)%slides.length);return;}
+  goToSlide((currentSlide+1)%slides.length);
+};
+window._togglePause=function(){
+  _paused=!_paused;
+  var btn=document.getElementById('pause-btn');
+  if(btn){btn.textContent=_paused?'▶':'⏸';btn.classList.toggle('paused',_paused);}
+  if(_paused){if(_advTimer)clearTimeout(_advTimer);if(_cdtRAF)cancelAnimationFrame(_cdtRAF);var bar=document.getElementById('prog-bar');if(bar)bar.style.transition='none';}
+  else _startTimer(5000);
+};
+
+// ══ BODY CONTENT RENDERER ════════════════════════════════════════
+function renderBodyContent(content){
+  if(!content)return'';
+  var dec=content.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"');
+  if(isFBEmbed(dec))return'<div class="emb"><div class="fb-wrap">'+dec+'</div></div>';
+  var isIframe=dec.trim().toLowerCase().startsWith('<iframe');
+  if(isIframe&&!isYT(dec)&&!isGS(dec)){
+    var html=dec;
+    if(!html.match(/height=/i))html=html.replace('<iframe','<iframe height="400"');
+    if(!html.match(/width=/i))html=html.replace('<iframe','<iframe width="700"');
+    return'<div class="emb">'+html+'</div>';
+  }
+  if(isYT(dec)||isGS(dec))return'<div class="vid-placeholder">&#9654; Loading media&#8230;</div>';
+  // Bare image URL in content
+  if(!dec.includes('<')&&/^https?:\/\//i.test(dec)&&/\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i.test(dec))
+    return'<img class="slide-img" src="'+dec+'" alt="" onerror="this.style.display=\'none\'">';
+  var txt=content.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+  txt=txt.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  txt=txt.replace(/(^|[\s>])(https?:\/\/[^\s<)"]+)/g,'$1<a href="$2" target="_blank">$2</a>');
+  txt=txt.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  txt=txt.replace(/\n/g,'<br>');
+  var chars=txt.replace(/<[^>]*>/g,'').length;
+  return'<p class="pbody'+(chars>120?' long':'')+'">' +txt+'</p>';
+}
+
+// ══ FONT SIZING ═══════════════════════════════════════════════════
+function sizeFonts(){
+  document.querySelectorAll('.slide.active .pbody').forEach(function(el){
+    var card=el.closest('.card');if(!card)return;
+    var chars=el.textContent.trim().length;
+    var sz=chars<=20?54:chars<=50?44:chars<=100?36:chars<=200?28:chars<=400?22:chars<=700?18:chars<=1200?15:13;
+    el.style.fontSize=sz+'px';
+    el.style.lineHeight=sz>=40?'1.2':sz>=28?'1.4':'1.6';
+    // overflow shrink
+    requestAnimationFrame(function(){
+      for(var i=0;i<8&&el.scrollHeight>card.clientHeight-20;i++){
+        sz=Math.max(11,sz-1.5);el.style.fontSize=sz+'px';
+      }
+    });
+  });
+}
+
+// ══ FACEBOOK SDK ══════════════════════════════════════════════════
+(function(){
+  if(typeof document==='undefined'||document.getElementById('facebook-jssdk'))return;
+  window.fbAsyncInit=function(){if(window.FB)FB.init({xfbml:true,version:'v19.0'});};
+  var js=document.createElement('script');js.id='facebook-jssdk';
+  js.src='https://connect.facebook.net/en_US/sdk.js';js.async=true;js.defer=true;
+  document.head.appendChild(js);
+})();
+function reprocessFB(){if(window.FB&&window.FB.XFBML){try{FB.XFBML.parse();}catch(e){}}}
+window.reprocessFB=reprocessFB;
+
+// ══ INIT ══════════════════════════════════════════════════════════
+async function init(){
+  await loadSlides();
+  renderSlides();
+  if(slides.length)goToSlide(0);
+  setInterval(async function(){
+    var old=JSON.stringify(slides.map(function(s){return s.title+s.content+s.active;}));
+    await loadSlides();
+    var now=JSON.stringify(slides.map(function(s){return s.title+s.content+s.active;}));
+    if(old!==now){var ci=currentSlide;renderSlides();goToSlide(Math.min(ci,slides.length-1));}
+  },CONFIG.refreshInterval);
+}
+init();
+
+
+(function(){
+  try{
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload=function(){window._qrReady=true;};
+    s.onerror=function(){window._qrReady=false;};  // CDN blocked: silent fail
+    document.head.appendChild(s);
+  }catch(e){window._qrReady=false;}
+})();
+function _extractURLs(text){
+  if(!text)return[];
+  var stripped=text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/<[^>]*>/g,' ');
+  var out=[],re=/https?:\/\/[^\s<>"',)\]]+/g,m;
+  while((m=re.exec(stripped)))out.push(m[0]);
+  return out.filter(function(v,i,a){return a.indexOf(v)===i;});
+}
+function _shortLabel(url){try{var u=new URL(url);var l=u.hostname.replace('www.','')+u.pathname.replace(/\/$/,'');return l.length>22?l.slice(0,20)+'…':l;}catch(e){return url.slice(0,22);}}
+function _buildQRItem(url,flame){
+  var wrap=document.createElement('div');wrap.className='qi'+(flame?' flame':'');
+  var box=document.createElement('div');box.className='qb';
+  var lbl=document.createElement('div');lbl.className='ql';
+  lbl.textContent=flame?'🔗 '+_shortLabel(url):_shortLabel(url);
+  wrap.appendChild(box);wrap.appendChild(lbl);
+  try{if(window.QRCode)new QRCode(box,{text:url,width:108,height:108,colorDark:'#111',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}
+  catch(e){box.style.cssText='width:108px;height:108px;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;padding:4px;text-align:center;';box.textContent=url.slice(0,40);}
+  setTimeout(function(){wrap.classList.add('vis');},80);
+  return wrap;
+}
+function updateQR(slideData){
+  var cz=document.getElementById('qr-content-zone');
+  var lz=document.getElementById('qr-link-zone');
+  if(!cz||!lz)return;
+  cz.innerHTML='';lz.innerHTML='';
+  if(!slideData)return;
+  var decoded=(slideData.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  var urls=[];
+  if(isFBEmbed(decoded)){var fbM=decoded.match(/data-href=["'](https?:\/\/www\.facebook\.com\/[^"']+)["']/i);if(fbM)urls=[fbM[1]];}
+  else urls=_extractURLs((slideData.title||'')+' '+(slideData.content||'')).slice(0,2);
+  var linkURL=(slideData.linkurl||'').trim();
+  if(!urls.length&&!linkURL)return;
+  function build(){
+    if(!window._qrReady){
+      // If CDN failed, show text URLs instead of QR codes
+      if(window._qrReady===false){
+        urls.forEach(function(u){var d=document.createElement('div');d.className='qi vis';d.style.cssText='background:rgba(255,255,255,0.9);border-radius:8px;padding:6px;max-width:140px;word-break:break-all;font-size:9px;color:#333;text-align:center;margin:4px auto;';d.textContent=_shortLabel(u);cz.appendChild(d);});
+        return;
+      }
+      setTimeout(build,100);return;
+    }
+    urls.forEach(function(u){cz.appendChild(_buildQRItem(u,false));});
+    if(linkURL)lz.appendChild(_buildQRItem(linkURL,true));
+  }
+  setTimeout(build,150);
+}
+window.updateQR=updateQR;
+
+
+// Schedule slide — injected every N posts
+function makeScheduleSlide() {
+  var n=new Date(), cur=n.getHours()*60+n.getMinutes();
+  function toM(s){var p=(s||'').split(':').map(Number);return(p[0]||0)*60+(p[1]||0);}
+  var items=document.querySelectorAll('.si');
+  var html='<div class="card sched-card"><div class="sched-card-title">📅 Daily Schedule</div>';
+  items.forEach(function(el){
+    var active=el.classList.contains('active'), past=el.classList.contains('past');
+    var cls='sc-row'+(active?' sc-active':past?' sc-past':'');
+    var t=el.querySelector('.st')?el.querySelector('.st').textContent:'';
+    var l=el.querySelector('.sl')?el.querySelector('.sl').textContent:'';
+    var s=el.querySelector('.ss')?el.querySelector('.ss').textContent:'';
+    html+='<div class="'+cls+'"><span class="sc-t">'+t+'</span><span class="sc-l">'+l+'</span>'+(s?'<span class="sc-s">'+s+'</span>':'')+'</div>';
+  });
+  html+='</div>';
+  return html;
+}
+
+
+function renderSlides(){
+  var c=document.getElementById('slides');c.innerHTML='';
+  var f=document.getElementById('ftr');
+  var sb=document.getElementById('skip-btn'),pb=document.getElementById('pause-btn');
+  f.innerHTML='';if(pb)f.appendChild(pb);if(sb)f.appendChild(sb);
+
+  // Build augmented list with schedule slide injected every 5 content slides
+  var augmented=[];
+  slides.forEach(function(s,i){
+    augmented.push({type:'content',data:s});
+    if((i+1)%5===0) augmented.push({type:'schedule',data:null});
+  });
+  if(augmented.length===0) augmented.push({type:'schedule',data:null});
+
+  // Store augmented for goToSlide
+  window._augSlides=augmented;
+
+  augmented.forEach(function(item,i){
+    var div=document.createElement('div');div.className='slide'+(i===0?' active':'');
+    if(item.type==='schedule'){
+      div.innerHTML=makeScheduleSlide();
+    }else{
+      var s=item.data;
+      var title=(s.title||'').trim(), content=(s.content||'').trim(), imageurl=(s.imageurl||'').trim();
+      var dec=content.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+      var imgExt=/\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i;
+      var imgSrc='';
+      if(imageurl&&/^https?:\/\//i.test(imageurl))imgSrc=imageurl;
+      else if(!dec.trim().startsWith('<')&&/^https?:\/\//i.test(dec)&&imgExt.test(dec))imgSrc=dec;
+      var hasImg=imgSrc.length>0;
+      var isFB=isFBEmbed(dec);
+      var isVid=isYT(dec)||isGS(dec);
+      var isIframe=dec.trim().toLowerCase().startsWith('<iframe');
+      var html='';
+      if(hasImg){
+        html='<div class="card img-card"><img class="slide-img" src="'+imgSrc+'" alt="" onerror="this.style.display=\'none\'">'+(title?'<div class="cap">'+title+'</div>':'')+'</div>';
+      }else if(isFB||(isIframe&&!isVid)){
+        html='<div class="card embed">'+renderBodyContent(content)+'</div>';
+      }else{
+        var body=isVid?'<div class="vid-placeholder">&#9654; Loading&#8230;</div>':renderBodyContent(content);
+        html='<div class="card">'+(title?'<div class="ptitle">'+title+'</div>':'')+body+'</div>';
+      }
+      div.innerHTML=html;
+    }
+    c.appendChild(div);
+    var dot=document.createElement('div');dot.className='dot'+(i===0?' active':'');
+    (function(idx){dot.onclick=function(){goToSlide(idx);};})(i);
+    f.insertBefore(dot,f.querySelector('#pause-btn')||f.firstChild);
+  });
+  sizeFonts();
+}
+
+// Override goToSlide to use augmented slides
+var _baseSlides=slides;
+function goToSlide(idx){
+  var aug=window._augSlides||[];
+  if(!aug.length)return;
+  idx=((idx%aug.length)+aug.length)%aug.length;
+  var allS=document.querySelectorAll('.slide'),allD=document.querySelectorAll('.dot');
+  if(allS.length){var prev=currentSlide;allS[prev].classList.remove('active');if(allD[prev])allD[prev].classList.remove('active');}
+  currentSlide=idx;
+  if(allS[idx])allS[idx].classList.add('active');
+  if(allD[idx])allD[idx].classList.add('active');
+  var item=aug[idx];
+  if(item&&item.type==='schedule'){
+    // Refresh schedule card content
+    allS[idx].innerHTML=makeScheduleSlide();
+    if(window.updateQR)updateQR(null);
+    hideVid();_startTimer(SLIDE_MS);return;
+  }
+  if(!item||!item.data){hideVid();_startTimer(SLIDE_MS);return;}
+  var s=item.data;
+  if(window.updateQR)updateQR(s);
+  setTimeout(sizeFonts,50);
+  var raw=(s.content||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  var nextIdx=(idx+1)%aug.length;
+  if(isYT(raw.toLowerCase())||/youtu\.be/.test(raw)){
+    var ytSrc=extractYTSrc(raw);var ytURL=ytSrc?makeYTEmbed(ytSrc):null;
+    if(ytURL){_setBar(VID_MS);_startCdt(VID_MS);showVid(ytURL,VID_MS,function(){goToSlide(nextIdx);});return;}
+  }
+  if(isGS(raw.toLowerCase())){
+    var gsSrc=extractGSSrc(raw);var gsURL=gsSrc?makeGSEmbed(gsSrc):null;
+    if(gsURL){_setBar(SLIDES_MS);_startCdt(SLIDES_MS);showVid(gsURL,SLIDES_MS,function(){goToSlide(nextIdx);});return;}
+  }
+  hideVid();
+  var dur=isFBEmbed(raw)||(raw.trim().startsWith('<iframe')&&!isYT(raw)&&!isGS(raw))?IFRAME_MS:SLIDE_MS;
+  _startTimer(dur);
+}
+
+
+// Floating sparks / fireworks
+(function() {
+  var colors=['#f5c842','#5bb8d4','#ff6b6b','#80ff80','#ffaa44','#ffffff'];
+  function makeSpark() {
+    var el=document.createElement('div');
+    el.className='spark';
+    var size=(4+Math.random()*8)+'px';
+    el.style.cssText='width:'+size+';height:'+size+
+      ';left:'+(Math.random()*100)+'vw'+
+      ';bottom:'+(Math.random()*20)+'vh'+
+      ';background:'+colors[Math.floor(Math.random()*colors.length)]+
+      ';animation-duration:'+(4+Math.random()*6)+'s'+
+      ';animation-delay:'+(Math.random()*8)+'s'+
+      ';box-shadow:0 0 6px currentColor;';
+    document.body.appendChild(el);
+    setTimeout(function(){el.remove();},12000);
+  }
+  for(var i=0;i<30;i++) makeSpark();
+  setInterval(makeSpark,400);
+})();
+
+</script>
+</body>
+</html>
