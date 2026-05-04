@@ -25,19 +25,19 @@
   #wx-desc{font-size:11px;color:var(--muted);display:block;margin-top:1px;}
   #wx-wind{font-size:10px;color:var(--muted);display:block;}
   /* SCHEDULE */
-  #sched{position:fixed;left:8px;top:84px;bottom:62px;width:212px;z-index:50;background:var(--sched);border:1.5px solid var(--acc)30;border-radius:14px;display:flex;flex-direction:column;padding:10px 9px 8px;font-family:'Nunito',sans-serif;animation:schDrift 22s ease-in-out infinite;}
-  @keyframes schDrift{0%,100%{transform:translateY(0);opacity:.95}50%{transform:translateY(-2px);opacity:.98}}
-  .sch-ttl{font-family:'Fredoka One',cursive;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--acc2);text-align:center;padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.10);margin-bottom:6px;}
-  #sched-list{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:2px;overflow:hidden;}
-  .si{display:flex;flex-direction:column;padding:6px 8px;border-radius:8px;border-left:3.5px solid var(--acc)30;transition:all .4s;}
-  .si.active{background:var(--acc)22;border-left-color:var(--acc);animation:siPulse 2.5s ease-in-out infinite;}
-  .si.past{opacity:.28;}
-  .si.also-active{border-left-color:var(--acc2)!important;background:var(--acc2)18!important;}
-  .si[data-jr],.si[data-sr]{padding-left:14px;}
-  @keyframes siPulse{0%,100%{background:var(--acc)18}50%{background:var(--acc)2e}}
-  .st{font-size:11px;font-weight:700;color:var(--acc)99;line-height:1.2;}
-  .sl{font-size:14px;font-weight:900;color:var(--text);line-height:1.2;}
-  .ss{font-size:10px;font-weight:600;color:var(--muted);line-height:1.3;margin-top:1px;}
+  
+  50%{transform:translateY(-2px);opacity:.98}}
+  
+  
+  
+  
+  
+  
+  .si[data-jr],
+  50%{background:var(--acc)2e}}
+  
+  
+  
   /* QR PANEL */
   #qrp{position:fixed;right:8px;top:84px;bottom:62px;width:148px;z-index:50;display:flex;flex-direction:column;align-items:center;pointer-events:none;}
   #qr-content-zone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding-top:6px;width:100%;overflow:hidden;}
@@ -51,9 +51,9 @@
   .qi.flame .ql{color:var(--acc2);}
   @keyframes flameBdr{0%,100%{box-shadow:0 0 0 2.5px var(--acc),0 0 14px var(--acc)99}50%{box-shadow:0 0 0 3.5px var(--acc2),0 0 22px var(--acc2)88}}
   /* SLIDE AREA */
-  #prog{position:fixed;bottom:62px;left:228px;right:164px;height:3px;z-index:199;background:rgba(255,255,255,.08);}
+  #prog{position:fixed;bottom:62px;left:8px;right:164px;height:3px;z-index:199;background:rgba(255,255,255,.08);}
   #prog-bar{height:100%;background:var(--acc);width:0%;transition:none;}
-  #slides{position:fixed;top:84px;left:228px;right:164px;bottom:62px;z-index:10;overflow:hidden;}
+  #slides{position:fixed;top:84px;left:8px;right:164px;bottom:62px;z-index:10;overflow:hidden;}
   .slide{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:18px;}
   .slide.active{display:flex;}
   .card{background:var(--card);border:1px solid var(--acc)28;border-radius:18px;padding:26px 34px;max-width:100%;width:100%;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(8px);box-shadow:0 8px 32px rgba(0,0,0,.35);}
@@ -130,8 +130,6 @@
   </div>
 </div>
 
-<!-- SCHEDULE -->
-<div id="sched"><div class="sch-ttl">Today's Schedule</div>
   <div id="sched-list">
     <div class="si" data-start="8:45" data-end="10:45"><span class="st">8:45–10:45</span><span class="sl">All classes</span></div>
     <div class="si" data-start="10:45" data-end="10:55"><span class="st">10:45–10:55</span><span class="sl">Recess</span></div>
@@ -307,7 +305,6 @@ function updateSchedule() {
     }
   });
 }
-setInterval(updateSchedule,15000); updateSchedule();
 
 // ══ CONTENT TYPE DETECTION ════════════════════════════════════════
 function isYT(s){return/youtube(?:-nocookie)?\.com|youtu\.be/.test(s);}
@@ -603,6 +600,7 @@ function renderSlides(){
 
   // Build augmented list with schedule slide injected every 5 content slides
   var augmented=[];
+  augmented.push({type:"info",data:{title:"Kennetcook District School",content:"Welcome! Check the slides for today\'s announcements. Posts update every 60 seconds from Google Sheets.",imageurl:"",linkurl:"",active:"show"}});
   slides.forEach(function(s,i){
     augmented.push({type:'content',data:s});
     if((i+1)%5===0) augmented.push({type:'schedule',data:null});
@@ -614,7 +612,10 @@ function renderSlides(){
 
   augmented.forEach(function(item,i){
     var div=document.createElement('div');div.className='slide'+(i===0?' active':'');
-    if(item.type==='schedule'){
+    if(item.type==='info'){
+      var id2=item.data;
+      div.innerHTML='<div class="card"><div class="ptitle">'+id2.title+'</div><p class="pbody">'+id2.content+'</p></div>';
+    }else if(item.type==='schedule'){
       div.innerHTML=makeScheduleSlide();
     }else{
       var s=item.data;
@@ -659,6 +660,10 @@ function goToSlide(idx){
   if(allS[idx])allS[idx].classList.add('active');
   if(allD[idx])allD[idx].classList.add('active');
   var item=aug[idx];
+  if(item&&item.type==='info'){
+    if(window.updateQR)updateQR(null);
+    hideVid();_startTimer(SLIDE_MS);return;
+  }
   if(item&&item.type==='schedule'){
     // Refresh schedule card content
     allS[idx].innerHTML=makeScheduleSlide();
